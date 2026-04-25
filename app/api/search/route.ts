@@ -1,8 +1,14 @@
 import { createFromSource } from "fumadocs-core/search/server";
+import { buildSearchIndex } from "@/lib/search.server";
+import { createMixedLanguageTokenizer } from "@/lib/search.shared";
 import { source } from "@/lib/source";
 
 export const dynamic = "force-static";
-export const { GET } = createFromSource(source, {
-  // https://docs.orama.com/docs/orama-js/supported-languages
-  language: "english",
+const searchApi = createFromSource(source, {
+  tokenizer: createMixedLanguageTokenizer(),
+  buildIndex: buildSearchIndex,
 });
+
+export async function GET() {
+  return searchApi.staticGET();
+}
