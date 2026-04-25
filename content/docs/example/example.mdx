@@ -3,10 +3,14 @@ title: Example
 description: Fumadocs文档使用案例。
 ---
 
-## 参考文档
-- [Fumadocs](https://www.fumadocs.dev/docs/markdown): Markdown文档
+## MDX 插件
+
+- [MDX Plugins](https://www.fumadocs.dev/docs/headless/mdx): MDX 插件
 
 ## 提示信息
+
+### 参考文档
+- [Fumadocs](https://www.fumadocs.dev/docs/markdown): Markdown文档（MDX 的 JSX 语法）
 
 ### 信息类型
 - 信息
@@ -47,3 +51,54 @@ description: Fumadocs文档使用案例。
 <Callout title="Title" type="idea">
   Hello World
 </Callout>
+
+## 备注告诫
+
+### 参考文档
+
+- [remark-admonition](https://www.fumadocs.dev/docs/headless/mdx/remark-admonition)：警告语法
+
+### Example
+
+:::tip[This is a `title`]
+
+Hello World
+
+:::
+
+:::warning
+
+Hello World
+
+:::
+
+## 标签组
+
+### 参考文档
+- [Tab Groups](https://www.fumadocs.dev/docs/markdown#tab-groups): 标签组文档
+
+### 默认标签组
+
+```ts tab="Tab 1"
+console.log('A');
+```
+
+```ts tab="Tab 2"
+console.log('B');
+```
+
+## 备注步骤
+
+### 参考文档
+
+- [Remark Steps](https://www.fumadocs.dev/docs/headless/mdx/remark-steps): 从标题生成步骤
+
+### Example
+
+```md
+### Installation [step]
+
+### Write Code [step]
+
+### Deploy [step]
+```
