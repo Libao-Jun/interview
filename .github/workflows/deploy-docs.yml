@@ -36,9 +36,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm build
-        # env:
-        #   GITHUB_PAGES: "true"
-        #   GITHUB_REPOSITORY: ${{ github.repository }}
+        env:
+          GITHUB_PAGES: "true"
+          GITHUB_REPOSITORY: ${{ github.repository }}
 
       - uses: actions/configure-pages@v5
 
