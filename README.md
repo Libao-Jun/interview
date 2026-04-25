@@ -29,6 +29,12 @@ pnpm types:check
 - `lib/source.ts`：Fumadocs 内容源加载入口
 - `source.config.ts`：MDX 集合和内容处理配置
 
+## 分支介绍
+
+- main: 生产分支，稳定可靠。
+- dev: 开发分支
+- feature: 新功能分支
+
 ## 写文档
 
 在 `content/docs` 下新增 `.md` 或 `.mdx` 文件即可，首页文档示例已经生成。
