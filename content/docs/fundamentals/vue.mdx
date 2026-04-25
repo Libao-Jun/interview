@@ -1,0 +1,648 @@
+---
+title: Vue
+description: 从执行模型、对象系统到类型建模，覆盖最常见的深入追问。
+---
+
+## 组件与插件
+
+### 基础介绍
+
+1️⃣ 组件 (`Component`) 是什么？
+
+> 在Vue中，组件是可复用、独立的代码模块，用于构建用户界面（通常包括：`HTML`、`JS`、`CSS`）。
+
+2️⃣ 插件 (`Plugin`) 是什么？
+
+> 在Vue中，插件是指对Vue的功能的增强或补充，可以扩展Vue的功能，添加全局方法、指令、过滤器或混入等。
+
+3️⃣ 作用的区别
+
+- 组件的作用是`构建用户界面`。
+- 插件的作用是`扩展Vue的功能`。
+
+4️⃣ 使用场景
+
+- 组件 (`Component`) 是用来构成你的 App 的`业务模块`，它的目标是 `App.vue`。
+- 插件 (`Plugin`) 是用来增强Vue的功能模块，它的目标是 `Vue` 本身。
+
+### 两者的区别
+
+1️⃣ 两者的区别主要表现在以下几个方面
+
+- 编写形式
+- 注册形式
+- 功能范围
+- 使用场景
+
+#### 编写形式
+
+1️⃣ 组件：通常是`.vue`文件，包含`template`、`script`、`style`。
+::: code-group
+- vue2
+```vue
+<template>
+  <div class="alert">{{ message }}</div>
+</template>
+<script>
+export default {
+  props: ["message"],
+};
+</script>
+<style lang="less" scoped></style>
+```
+
+- vue3
+```vue
+<template>
+  <div class="alert">{{ message }}</div>
+</template>
+<script setup lang="ts">
+const props = defineProps({
+  message: String,
+});
+</script>
+<style lang="less" scoped></style>
+```
+
+
+2️⃣ 插件：必须暴露一个`install`方法，接收`app`和`可选参数`。
+
+- my-plugin-vue2
+
+```js
+export default {
+  // Vue 2 中 install 接收的是 Vue 构造函数
+  install(Vue, options) {
+    // 1. 添加全局方法或属性
+    Vue.myGlobalMethod = () => {
+      console.log("全局方法被调用", options);
+    };
+
+    // 2. 添加全局资源（指令/过滤器/过渡等）
+    Vue.directive("focus", {
+      inserted(el) {
+        el.focus();
+      },
+    });
+
+    // 3. 添加全局组件
+    Vue.component("GlobalComp", {
+      template: "<div>全局组件</div>",
+    });
+
+    // 4. 添加实例方法（通过原型链）
+    Vue.prototype.$myMethod = function () {
+      console.log("实例方法被调用", options);
+    };
+
+    // 5. 添加全局混入
+    Vue.mixin({
+      created() {
+        console.log("插件混入的 created 钩子");
+      },
+    });
+
+    // 6. 添加全局过滤器（Vue 3 已移除）
+    Vue.filter("myFilter", (value) => {
+      return value.toUpperCase();
+    });
+  },
+};
+```
+
+- my-plugin-vue3
+```js
+export default {
+  install(app, options) {
+    // 添加全局属性
+    app.config.globalProperties.$myMethod = () => {...}
+    // 添加全局组件
+    app.component('GlobalComp', {...})
+    // 添加全局指令
+    app.directive('focus', {...})
+    // 注入provide
+    app.provide('key', 'value')
+  }
+}
+```
+
+-  插件编写核心对照表
+
+| 功能           | Vue 2 写法                    | Vue 3 写法                       |
+| -------------- | ----------------------------- | -------------------------------- |
+| 全局属性/方法  | Vue.prototype.$xxx            | app.config.globalProperties.$xxx |
+| 创建应用       | new Vue()                     | createApp(App)                   |
+| install 参数   | install(Vue, options)         | install(app, options)            |
+| 全局组件       | Vue.component()               | app.component()                  |
+| 全局指令       | Vue.directive()               | app.directive()                  |
+| 全局混入       | Vue.mixin()                   | app.mixin()                      |
+| provide/inject | Vue.prototype.$xxx + 手动实现 | app.provide() 原生支持           |
+| 过滤器         | Vue.filter()                  | 已移除，用计算属性或方法替代     |
+| 注册插件       | Vue.use(plugin)               | app.use(plugin)                  |
+
+#### 注册形式
+
+- 组件注册
+
+```ts
+// 局部注册（常用）—— vue2
+import MyButton from "./MyButton.vue";
+export default {
+  components: { MyButton },
+};
+
+// 局部注册（常用）—— vue3
+import MyButton from "./MyButton.vue";
+// 直接使用
+// <template>
+//   <MyButton />
+// </template>
+
+// 全局注册
+import MyButton from "./MyButton.vue";
+Vue.component("MyButton", MyButton); // Vue 2
+app.component("MyButton", MyButton); // Vue 3
+```
+- 插件注册
+```ts
+// 使用插件
+import { createApp } from "vue";
+import MyPlugin from "./my-plugin";
+
+const app = createApp(App);
+app.use(MyPlugin, { option: "value" });
+```
+
+- 注册插件的时机
+
+- Vue 2：必须在 `new Vue()` 之前
+  > `Vue.use()` 会修改 `Vue` 构造函数的原型链和静态方法，必须在实例化之前完成。
+
+```js [main.js]
+// ✅ 正确：先注册插件
+Vue.use(VueRouter)
+Vue.use(Vuex)
+
+// 再创建实例
+new Vue({
+  router,
+  store,
+  render: h => h(App)
+}).$mount('#app')
+
+// ❌ 错误：在实例创建后注册（会报错或无效）
+const vm = new Vue({...})
+Vue.use(MyPlugin) // 此时注册的全局内容不会影响已创建的实例
+```
+
+- Vue 3：必须在 `app.mount()` 之前
+
+```ts [main.ts]
+// ✅ 正确：先注册插件
+const app = createApp(App);
+app.use(router);
+app.use(store);
+app.use(myPlugin);
+
+// 最后挂载
+app.mount("#app");
+
+// ❌ 错误：挂载后再注册
+app.mount("#app");
+app.use(anotherPlugin); // 警告：插件不会生效，已创建的组件无法获取
+```
+
+- 核心要点总结
+
+| 特性     | Vue 2                                | Vue 3                           |
+| -------- | ------------------------------------ | ------------------------------- |
+| 注册时机 | `new Vue()` 之前                     | `app.mount()` 之前              |
+| 重复注册 | 自动阻止（基于 `_installedPlugins`） | 自动阻止（基于 `Set`）          |
+| 不同实例 | 同一 Vue 构造函数只注册一次          | 不同 `app` 实例可分别注册       |
+| 注册记录 | ` Vue._installedPlugins`             | `app._installedPlugins`（内部） |
+| 重复警告 | 静默忽略                             | 控制台警告                      |
+
+
+#### 功能范围
+
+| 对比项   | 组件                      | 插件                                |
+| -------- | ------------------------- | ----------------------------------- |
+| 作用域   | 局部（通常）或全局注册    | 全局                                |
+| 主要用途 | 封装 HTML/CSS/JS `UI片段` | 添加全局方法、指令、混入、provide等 |
+| 典型例子 | 表格、日历、图表          | 国际化、HTTP封装、通知条            |
+
+#### 使用场景
+
+- `组件`：需要封`可复用`的`UI片段`（表单、卡片、弹窗）。
+- `插件`：需要提供跨多个组件的`全局功能`（路由、状态管理、国际化、自定义指令库）。
+
+## data是函数而非对象
+
+1️⃣ Vue实例定义的时候，data属性既可以是一个`对象`，也可以是一个`函数`。
+
+```js [Vue实例]
+const app = new Vue({
+  el: "#app",
+  // 对象格式
+  data: {
+    foo: "foo",
+  },
+  // 函数格式
+  data() {
+    return {
+      foo: "foo",
+    };
+  },
+});
+```
+
+- Tip
+
+- 实例的 `data` 可以是对象，因为`实例唯一`，不会复用。
+- 组件的 `data` 必须是函数，返回独立对象，防止多次复用共享同一引用（组件复用可能导致数据共享，所以必须使用函数返回新对象）。
+
+> Vue组件的复用可能会有很多个实例，采用函数返回一个全新`data`形式，使每个实例对象的数据不会受到其他实例对象数据的污染
+
+
+2️⃣ 组件 data
+
+> 组件中定义 `data` 属性，只能是一个函数
+
+3️⃣ 结论
+
+- 根实例
+  > 根实例对象`data`可以是`对象`也可以是`函数`（根实例是单例），不会产生数据污染情况
+- 组件实例
+  > 组件实例对象`data`必须为函数，目的是为了防止多个组件实例对象之间共用一个`data`，产生数据污染。采用函数的形式，`init Data`时会将其作为工厂函数都会返回全新`data`对象
+
+## $nextTick详解
+
+1️⃣ 定义
+
+> 等待下一次 DOM 更新结束之后执行延迟回调; 在修改数据之后立即使用这个方法，获取更新后的 DOM。
+
+-  warning Tip：`$nextTick`->等 Vue 把该更新的更新完了，再执行传入的这个函数。
+
+
+```vue [index.vue]
+<script setup>
+import { ref, nextTick, onMounted } from "vue";
+const msg = ref("Hello");
+const box = ref(null);
+function updateText() {
+  msg.value = "Vue3 NextTick!";
+  // 立即读 DOM 可能还是旧值或 null，不要在这里直接读 box.value
+  console.log("立即获取：", box.value && box.value.textContent);
+  // 使用 nextTick 确保 DOM 更新完成后再读取
+  nextTick(() => {
+    console.log("nextTick 后获取：", box.value && box.value.textContent);
+  });
+}
+onMounted(() => {
+  updateText();
+});
+</script>
+```
+
+2️⃣ Vue 的异步更新队列机制
+
+> Vue 的响应式系统在数据变化时，并`不会立即同步更新` DOM。因为若每次数据变化都触发一次 DOM 渲染，性能会极差，因此，Vue 采用的是`异步更新队列`的策略
+
+3️⃣ 关键点
+
+> DOM 的更新是`批量`、`异步`进行的，因此数据变化后无法立即获得最新的 DOM 结构。
+
+4️⃣ $nextTick 的实现原理
+
+> 将用户传入的回调函数，推迟到 DOM 更新队列执行完毕之后再执行。
+
+5️⃣ 使用方式
+- 回调方式.js
+
+```js
+nextTick(() => {
+  console.log("DOM 更新完毕！");
+});
+```
+- await方式.js
+```js
+await nextTick();
+console.log("DOM 更新完毕！");
+```
+
+6️⃣ 常见用例总结
+
+- `访问更新后的 DOM`：在修改数据后，获取元素的尺寸、内容或位置。
+- `集成第三方库`：当一个 DOM 元素通过 `v-if` 创建后，需要在这个元素上初始化一个第三方库（如图表、编辑器等）。
+- `管理焦点`：在一个输入框通过 `v-if` 显示后，立即让它获得焦点。
+
+## 解决 SPA 首屏加载速度慢
+
+1️⃣ 加载慢的原因
+
+- 网络延时问题
+- 资源文件体积是否过大
+- 资源是否重复发送请求去加载了
+- 加载脚本的时候，渲染内容堵塞了
+
+2️⃣ 常见的几种 SPA 首屏优化方式
+
+- 减小入口文件体积
+  > 路由懒加载，把不同路由对应的组件分割成不同的代码块，待路由被请求的时候会单独打包路由，使得入口文件变小，加载速度大大增加
+- 静态资源本地缓存
+  > 后端返回资源问题
+  >
+  > - 采用HTTP缓存，设置`Cache-Control`，`Last-Modified`，`Etag`等响应头
+  > - 采用`Service Worker`离线缓存
+
+> 前端合理利用`localStorage`
+
+- UI 框架按需加载
+- 对图片资源压缩
+- 避免组件重复打包
+- 开启 GZip 压缩
+- 使用 SSR（服务端渲染）
+
+## SPA 和 MPA
+
+1️⃣ SPA 和 MPA 对比
+
+|                  | 单页面应用（SPA）              | 多页面应用（MPA）                     |
+| ---------------- | ------------------------------ | ------------------------------------- |
+| 组成             | 一个主页面和多个组件(页面片段) | 多个主页面                            |
+| 刷新方式         | 局部刷新                       | 整页刷新                              |
+| url 模式         | 哈希模式                       | 历史模式                              |
+| SEO 搜索引擎优化 | 难实现，可使用 SSR 方式改善    | 容易实现                              |
+| 数据传递         | 容易                           | 通过 url、cookie、localStorage 等传递 |
+| 页面切换         | 速度快，用户体验良好           | 切换加载资源，速度慢，用户体验差      |
+| 维护成本         | 相对容易                       | 相对复杂                              |
+
+2️⃣ 单页应用优缺点
+
+> ✅ 优点
+>
+> - 具有桌面应用的即时性、网站的可移植性和可访问性
+> - 用户体验好、快，内容的改变不需要重新加载整个页面
+> - 良好的前后端分离，分工更明确
+
+> ❌ 缺点
+>
+> - 不利于搜索引擎的抓取
+> - 首次渲染速度相对较慢
+
+3️⃣ SPA 做 SEO优化
+
+- SSR 服务端渲染
+- 静态化
+- 使用`Phantomjs`针对爬虫处理
+
+## 实现一个 SPA
+
+### 原理
+
+- 监听地址栏中 `hash` 变化驱动界面变化
+- 用 `pushsate` 记录浏览器的历史，驱动界面发送变化
+
+### 实现
+
+#### hash 模式
+
+> 核心通过监听`url`中的`hash`来进行路由跳转
+
+```js [Router.js]
+// 定义 Router
+class Router {
+  constructor() {
+    this.routes = {}; // 存放路由path及callback
+    this.currentUrl = ""; // 监听路由change调用相对应的路由回调
+    window.addEventListener("load", this.refresh, false);
+    window.addEventListener("hashchange", this.refresh, false);
+  }
+  route(path, callback) {
+    this.routes[path] = callback;
+  }
+  push(path) {
+    this.routes[path] && this.routes[path]();
+  }
+}
+
+// 使用 router
+window.miniRouter = new Router();
+miniRouter.route("/", () => console.log("page1"));
+miniRouter.route("/page2", () => console.log("page2"));
+
+miniRouter.push("/"); // page1
+miniRouter.push("/page2"); // page2
+```
+
+#### history 模式
+
+> `history` 模式核心借用 `HTML5 history api`
+>
+> - `history.pushState` 浏览器历史纪录添加记录
+> - `history.replaceState` 修改浏览器历史纪录中当前纪录
+> - `history.popState` 当 `history` 发生变化时触发
+
+```js [Router.js]
+// 定义 Router
+class Router {
+  constructor() {
+    this.routes = {};
+    this.listerPopState();
+  }
+  init(path) {
+    history.replaceState({ path: path }, null, path);
+    this.routes[path] && this.routes[path]();
+  }
+  route(path, callback) {
+    this.routes[path] = callback;
+  }
+  push(path) {
+    history.pushState({ path: path }, null, path);
+    this.routes[path] && this.routes[path]();
+  }
+  listerPopState() {
+    window.addEventListener("popstate", (e) => {
+      const path = e.state && e.state.path;
+      this.routers[path] && this.routers[path]();
+    });
+  }
+}
+
+// 使用 Router
+window.miniRouter = new Router();
+miniRouter.route("/", () => console.log("page1"));
+miniRouter.route("/page2", () => console.log("page2"));
+
+// 跳转
+miniRouter.push("/page2"); // page2
+```
+
+## v-show 与 v-if
+
+> `v-if` 与 `v-show` 都能控制`DOM`元素在页面的显示与隐藏。
+
+- 性能消耗
+  - `v-if`有更高的切换消耗（直接操作`DOM`节点增加与删除）
+  - `v-show`有更高的初始渲染消耗（不管初始条件是什么，元素总是会被渲染）
+- 控制手段
+  - `v-show` 隐藏则是为该元素添加 `display:none/block`，DOM元素依旧还在。
+  - `v-if` 显示隐藏是将`DOM`元素整个添加或删除
+- 组件生命周期
+  - `v-show` 由`false -> true 或 true->false`的时候，`不会触发`组件的`生命周期`
+  - `v-if`由`false-> true 或 true -> false`的时候，`会触发`组件的`生命周期`
+- 应用场景
+  - 需要非常频繁地切换，则使用 `v-show` 较好
+  - 在运行时条件很少改变，则使用 `v-if` 较好
+
+## v-if 与 v-for
+
+| 版本  | 优先级         | 官方说明                             |
+| ----- | -------------- | ------------------------------------ |
+| Vue 2 | `v-for > v-if` | `v-for` 的优先级高于 `v-if`。        |
+| Vue 3 | `v-if > v-for` | `v-if `会拥有比 `v-for` 更高的优先级 |
+
+> Vue2.x
+>
+> - 在Vue 2中，当`v-for`和`v-if`作用于同一元素时，无论`v-if`的条件是否依赖`v-for`的变量，`v-for`都会先执行。
+
+> Vue3.x
+>
+> - Vue会先执行 `v-if` 的条件判断，若条件为真，才会继续执行`v-for`指令来渲染列表。若条件为假，则直接跳过`v-for`的渲染
+
+-  注意事项
+  - 不要将 `v-for` 和 `v-if` 用在同一个元素上
+  - ✅ 官方最佳实践：如何正确地过滤列表
+    - 使用 `computed` 计算属性（推荐）
+    - 将 `v-if` 移动到外层包裹元素
+
+## 组件间通信
+
+| 通信方式       | Vue 2                    | Vue 3                     | 核心差异                     |
+| -------------- | ------------------------ | ------------------------- | ---------------------------- |
+| 父 → 子        | `props`                  | `defineProps`             | TS 类型推导更强              |
+| 子 → 父        | `$emit`                  | `defineEmits` + `emit`    | 需提前声明，避免原生事件冲突 |
+| 双向绑定       | `v-model` + `.sync`      | `v-model`（支持多个）     | 语法更统一，功能更强         |
+| 属性/事件透传  | `$attrs ` + `$listeners` | `$attrs`（已合并）        | 不再区分属性和监听器         |
+| 事件总线       | `EventBus($on/$off)`     | `mitt` 等第三方库         | Vue3 移除了实例事件方法      |
+| 跨级通信       | `Vuex`                   | `Pinia`                   | Pinia 更轻量，TS 原生支持    |
+| 跨级通信       | 默认非响应式对象         | `ref/reactive` 自动响应式 | `provide / inject`           |
+| 获取根实例     | `$root`                  | `$root`                   | 不推荐（Vue3 多根节点）      |
+| 获取父实例     | `$parent`                | `$parent`                 | 均不推荐，破坏封装           |
+| 获取子实例     | `$refs`                  | `ref` + `defineExpose`    | 子组件需显式暴露内容         |
+| 获取所有子实例 | `$children`              | `已移除`                  | 因多根节点导致不可靠         |
+
+## Vue2.x
+
+### 生命周期
+
+| 生命周期      | 可访问 data | 可访问 $el | 可操作 DOM | 适合做什么                                                                 |
+| ------------- | ----------- | ---------- | ---------- | -------------------------------------------------------------------------- |
+| beforeCreate  | ❌          | ❌         | ❌         | 插件初始化/非响应式配置                                                    |
+| created       | ✅          | ❌         | ❌         | 数据请求/初始化                                                            |
+| beforeMount   | ✅          | ❌         | ❌         | 最后的数据修改                                                             |
+| mounted       | ✅          | ✅         | ✅         | DOM 操作/第三方库初始化/启动定时器/获取数据/ref操作                        |
+| beforeUpdate  | ✅          | ✅(旧)     | ✅(旧)     | 获取旧 DOM 状态                                                            |
+| updated       | ✅          | ✅(新)     | ✅(新)     | 操作更新后的 DOM                                                           |
+| activated     | ✅          | ✅         | ✅         | ⚠️keep-alive 缓存组件激活时：刷新数据/开始轮询/恢复状态/重新获取焦点       |
+| deactivated   | ✅          | ✅         | ✅         | ⚠️keep-alive 缓存组件失活时：停止轮询/保存滚动位置/清理临时资源/暂停音视频 |
+| beforeDestroy | ✅          | ✅         | ✅         | 清理定时器/取消请求/移除事件监听/销毁第三方实例/解绑事件总线（最重要）     |
+| destroyed     | ❌          | ❌         | ❌         | 清理完成的通知/日志记录/全局状态清理（实例已不可用）                       |
+
+### 生命周期钩子对比总结
+
+| 特点                         | 说明                                                 |
+| ---------------------------- | ---------------------------------------------------- |
+| 首次进入 keep-alive 缓存组件 | `created → beforeMount → mounted → activated`        |
+| 缓存后再次进入               | `activated`（不经过 created/mounted）                |
+| 组件失活                     | `deactivated`（不经过 beforeDestroy）                |
+| 组件被销毁（v-if=false）     | `deactivated`（如有）→ `beforeDestroy → destroyed`   |
+| 子组件先于父组件挂载         | 子组件 `mounted` 先执行，父组件 `mounted` 后执行     |
+| 子组件先于父组件销毁         | 子组件 `destroyed` 先执行，父组件 `destroyed` 后执行 |
+
+### 对象新增属性界面不刷新
+
+1️⃣ 直接添加属性的问题
+
+> Vue中给对象添加新属性界面不刷新，数据虽然更新了（console打印出了新属性），但页面并没有更新
+
+2️⃣ 原因分析
+
+> `Object.defineProperty` 只能为对象`已存在的属性`添加 `getter/setter`。
+> 初始化时 `Vue` 会遍历对象已存在的属性进行`getter/setter`劫持，后期新增的属性`Object.defineProperty`不会被 `getter/setter`劫持，因此没有响应式能力。
+
+```js
+const obj = {};
+Object.defineProperty(obj, "foo", {
+  get() {
+    console.log(`get foo:${val}`);
+    return val;
+  },
+  set(newVal) {
+    if (newVal !== val) {
+      console.log(`set foo:${newVal}`);
+      val = newVal;
+    }
+  },
+});
+
+// 当我们访问foo属性或者设置foo值的时候都能够触发setter与getter
+obj.foo;
+obj.foo = "new";
+// 但是我们为obj添加新属性的时候，却无法触发事件属性的拦截
+obj.bar = "新属性";
+```
+
+3️⃣ 解决方案
+
+> Vue 不允许在已经创建的实例上动态添加新的响应式属性，若想实现数据与视图同步更新，可采取下面三种解决方案
+>
+> - `Vue.set() / this.$set() / vm.$set() / $set()`
+> - `Object.assign()`
+> - `$forcecUpdated()`
+
+4️⃣ 小结
+
+- 若为对象`添加少量`的新属性，可以直接采用`Vue.set()`
+- 若需要为新对象`添加大量`的新属性，则通过`Object.assign()`创建新对象
+- 若你实在不知道怎么操作时，可采取`$forceUpdate()`进行强制刷新 (不建议)
+
+5️⃣ Example
+- Object.assign()
+
+```js
+// 直接使用 Object.assign() 添加到对象的新属性不会触发更新
+// 应创建一个新的对象，合并原对象和混入对象的属性
+this.someObject = Object.assign({}, this.someObject, {
+  newProperty1: 1,
+  newProperty2: 2,
+  //  ...
+});
+```
+- $forceUpdate
+```js
+- 若你发现你自己需要在 Vue 中做一次强制更新，99.9% 的情况，是你在某个地方做错了事
+- $forceUpdate迫使 Vue 实例重新渲染
+- PS：仅仅影响实例本身和插入插槽内容的子组件，而不是所有子组件。
+```
+
+- warning：`vue3`是用过`proxy`实现数据响应式的，直接动态添加新属性仍可以实现数据响应式
+
+## Vue3.x
+
+### 生命周期
+
+| Options API     | Composition API   | 可访问 data | 可访问 DOM | 主要用途                                                     |
+| --------------- | ----------------- | ----------- | ---------- | ------------------------------------------------------------ |
+| -               | setup() 本身      | ✅          | ❌         | 数据初始化、异步请求                                         |
+| beforeMount     | onBeforeMount     | ✅          | ❌         | 最后的数据修改，DOM未生成                                    |
+| mounted         | onMounted         | ✅          | ✅         | DOM操作、第三方库初始化                                      |
+| beforeUpdate    | onBeforeUpdate    | ✅          | ✅(旧)     | 获取旧DOM状态，避免无限循环                                  |
+| updated         | onUpdated         | ✅          | ✅(新)     | 操作更新后的DOM                                              |
+| activated       | onActivated       | ✅          | ✅         | keep-alive缓存组件激活时：刷新数据/开始轮询/恢复状态         |
+| deactivated     | onDeactivated     | ✅          | ✅         | keep-alive缓存组件失活时：停止轮询/保存滚动位置/清理临时资源 |
+| beforeUnmount   | onBeforeUnmount   | ✅          | ✅         | 清理资源（最重要）                                           |
+| unmounted       | onUnmounted       | ❌          | ❌         | 清理完成的通知                                               |
+| renderTracked   | onRenderTracked   | ✅          | ❌         | 开发调试：依赖被收集时                                       |
+| renderTriggered | onRenderTriggered | ✅          | ❌         | 开发调试：依赖触发重渲染时                                   |
+| errorCaptured   | onErrorCaptured   | ✅          | ✅         | 捕获子组件错误                                               |

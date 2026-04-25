@@ -1,5 +1,15 @@
 {
   "title": "基础原理",
   "defaultOpen": true,
-  "pages": ["index", "html-css", "javascript-typescript", "browser-network"]
+  "pages": [
+    "index",
+    "html",
+    "es6",
+    "css",
+    "vue",
+    "javascript",
+    "typescript",
+    "network",
+    "browser"
+  ]
 }
