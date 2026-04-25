@@ -46,7 +46,7 @@ const routines = [
 
 const rolePaths = [
   {
-    title: "校招 / 初级前端",
+    title: "初级前端",
     href: "/docs/fundamentals",
     icon: GraduationCap,
     accent: "bg-amber-100 text-amber-800",
@@ -54,7 +54,7 @@ const rolePaths = [
     focus: ["HTML/CSS", "JavaScript / TypeScript", "浏览器与网络"],
   },
   {
-    title: "1-3 年 / 业务前端",
+    title: "中级前端",
     href: "/docs/frameworks",
     icon: Layers3,
     accent: "bg-sky-100 text-sky-800",
@@ -62,22 +62,20 @@ const rolePaths = [
     focus: ["Vue 专题", "React 专题", "刷题策略"],
   },
   {
-    title: "3-5 年 / 高级前端",
+    title: "高级前端",
     href: "/docs/engineering/performance",
     icon: Rocket,
     accent: "bg-emerald-100 text-emerald-800",
-    description:
-      "把性能、架构和复杂场景题讲成“问题、方案、取舍、结果”的完整链路。",
-    focus: ["性能优化", "项目架构", "真实案例复盘"],
+    description: "把性能、架构和复杂场景题讲成“问题、方案、取舍、结果”的完整链路。",
+    focus: ["前端工程化（构建/依赖/环境）","前端模块化","性能优化（首屏/运行时/资源）", "项目架构", "真实案例复盘"],
   },
   {
-    title: "偏工程化 / 平台方向",
+    title: "专家前端",
     href: "/docs/engineering/architecture",
     icon: Wrench,
     accent: "bg-rose-100 text-rose-800",
-    description:
-      "从构建链路、发布治理、监控与协作机制切入，更适合平台或基建面试。",
-    focus: ["发布流程", "模块边界", "工程治理"],
+    description: "能跨团队、跨项目解决系统性问题，主导技术演进，对稳定性、效率、质量、成本负责。",
+    focus: ["前端架构设计与演进", "性能与稳定性SLA", "工程治理（代码/依赖/构建/部署）", "跨团队协作与技术推动", "技术债务与演进策略", "面试与团队赋能"],
   },
 ];
 
@@ -249,7 +247,7 @@ export default function HomePage() {
                   Role-Based Entry
                 </p>
                 <h2 className="text-2xl font-semibold text-slate-950 dark:text-white">
-                  按级别切入，不用从目录盲找
+                  按入门/进阶/高级/专家切入。
                 </h2>
               </div>
               <p className="max-w-sm text-sm leading-6 text-slate-500 dark:text-slate-300">
@@ -387,7 +385,7 @@ export default function HomePage() {
               Interview Routine
             </p>
             <h2 className="mt-2 text-2xl font-semibold">
-              把资料沉淀成你的表达系统
+              资料沉淀
             </h2>
           </div>
           <div className="grid gap-3 md:grid-cols-3">
