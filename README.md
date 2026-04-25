@@ -39,20 +39,9 @@ pnpm types:check
 
 在 `content/docs` 下新增 `.md` 或 `.mdx` 文件即可，首页文档示例已经生成。
 
-## AI Chat
-
-当前模板已启用 Inkeep AI 聊天入口，环境变量位于 `.env.local`：
-
-```env
-INKEEP_API_KEY=
-```
-
-如果暂时不接入 Inkeep，可以先留空；页面仍可正常启动，但 Ask AI 功能不可用。
-
 ## GitHub Pages 发布
 
 - 已添加 GitHub Actions 工作流，推送到 `main` 分支后会自动执行静态构建并发布到 GitHub Pages。
-- Pages 构建会关闭 `Ask AI` 入口，因为 GitHub Pages 不支持当前的 `/api/chat` 服务端接口。
 
 ## 参考资料
 

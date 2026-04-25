@@ -20,19 +20,10 @@
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "tailwind-merge": "^3.5.0",
-    "@ai-sdk/react": "^3.0.170",
-    "zod": "^4.3.6",
-    "ai": "^6.0.168",
-    "@radix-ui/react-presence": "^1.1.5",
-    "@ai-sdk/openai-compatible": "^2.0.41",
-    "class-variance-authority": "^0.7.1",
-    "remark": "^15.0.1",
-    "remark-gfm": "^4.0.1",
-    "remark-rehype": "^11.1.2",
-    "hast-util-to-jsx-runtime": "^2.3.6",
-    "unist-util-visit": "^5.1.0"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.13",
     "@tailwindcss/postcss": "^4.2.4",
     "@types/mdx": "^2.0.13",
     "@types/node": "^25.6.0",
@@ -40,8 +31,6 @@
     "@types/react-dom": "^19.2.3",
     "postcss": "^8.5.10",
     "tailwindcss": "^4.2.4",
-    "typescript": "^6.0.3",
-    "@biomejs/biome": "^2.4.13",
-    "@types/hast": "^3.0.4"
+    "typescript": "^6.0.3"
   }
 }
