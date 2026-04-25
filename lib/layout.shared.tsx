@@ -1,4 +1,5 @@
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
+import { ThemeSwitch } from "@/components/theme-provider";
 import { appName, gitConfig } from "./shared";
 
 export function baseOptions(): BaseLayoutProps {
@@ -11,6 +12,9 @@ export function baseOptions(): BaseLayoutProps {
     nav: {
       // JSX supported
       title: appName,
+    },
+    slots: {
+      themeSwitch: ThemeSwitch,
     },
     ...(githubUrl ? { githubUrl } : {}),
   };

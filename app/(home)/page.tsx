@@ -138,11 +138,10 @@ export default function HomePage() {
 
             <div className="space-y-4">
               <h1 className="max-w-4xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl dark:text-white">
-                把零散面试题整理成一套可复盘、可复述、可链接项目经验的知识库。
+                零散面试题和项目经验整理成的知识库
               </h1>
               <p className="max-w-2xl text-base leading-7 text-slate-600 sm:text-lg dark:text-slate-300">
-                这里不是题海，而是一套围绕基础原理、框架实战和工程化场景展开的面试路线图。
-                目标是让你在回答时既能说清“是什么”，也能说明“为什么这样做”。
+                一套围绕基础原理、框架实战和工程化场景展开的面试路线图。
               </p>
             </div>
 
@@ -250,7 +249,7 @@ export default function HomePage() {
                   Role-Based Entry
                 </p>
                 <h2 className="text-2xl font-semibold text-slate-950 dark:text-white">
-                  按岗位级别切入，不用从目录盲找
+                  按级别切入，不用从目录盲找
                 </h2>
               </div>
               <p className="max-w-sm text-sm leading-6 text-slate-500 dark:text-slate-300">
