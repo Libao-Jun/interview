@@ -42,6 +42,9 @@ pnpm types:check
 ## GitHub Pages 发布
 
 - 已添加 GitHub Actions 工作流，推送到 `main` 分支后会自动执行静态构建并发布到 GitHub Pages。
+- 报错: `github-pages` Value 'github-pages' is not valid
+  - 解决方案：去 GitHub 仓库设置里创建或同步一个名为 github-pages 的 Environment。
+  > 路径是 Settings → Environments → New environment → github-pages。
 
 ## 参考资料
 
