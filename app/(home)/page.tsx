@@ -123,23 +123,24 @@ export default function HomePage() {
   const recentAdditions = getRecentAdditions();
 
   return (
-    <main className="relative flex-1 overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.16),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(56,189,248,0.16),_transparent_30%),linear-gradient(180deg,_rgba(255,255,255,0.96),_rgba(249,250,251,0.9))]" />
-      <div className="pointer-events-none absolute -left-10 top-16 size-40 rounded-full bg-amber-200/40 blur-3xl" />
-      <div className="pointer-events-none absolute right-0 top-0 size-56 rounded-full bg-sky-200/35 blur-3xl" />
+    <main className="relative flex-1 overflow-hidden bg-white text-slate-950 dark:bg-slate-950 dark:text-slate-100">
+      <div className="pointer-events-none absolute inset-0 [background-image:radial-gradient(circle_at_top_left,_rgba(251,191,36,0.16),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(56,189,248,0.16),_transparent_30%),linear-gradient(180deg,_rgba(255,255,255,0.96),_rgba(249,250,251,0.9))] dark:hidden" />
+      <div className="pointer-events-none absolute inset-0 hidden dark:block dark:[background-image:radial-gradient(circle_at_top_left,_rgba(251,191,36,0.12),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(56,189,248,0.12),_transparent_30%),linear-gradient(180deg,_rgba(2,6,23,0.96),_rgba(15,23,42,0.92))]" />
+      <div className="pointer-events-none absolute -left-10 top-16 size-40 rounded-full bg-amber-200/40 blur-3xl dark:bg-amber-500/10" />
+      <div className="pointer-events-none absolute right-0 top-0 size-56 rounded-full bg-sky-200/35 blur-3xl dark:bg-sky-500/10" />
 
       <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-14 px-6 pb-16 pt-10 sm:px-8 lg:px-12 lg:pt-16">
         <section className="grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_360px] lg:items-start">
           <div className="space-y-6">
-            <span className="inline-flex items-center rounded-full border border-amber-300/60 bg-white/80 px-3 py-1 text-xs font-medium tracking-[0.24em] text-amber-700 uppercase shadow-sm backdrop-blur">
+            <span className="inline-flex items-center rounded-full border border-amber-300/60 bg-white/80 px-3 py-1 text-xs font-medium tracking-[0.24em] text-amber-700 uppercase shadow-sm backdrop-blur dark:border-amber-400/20 dark:bg-slate-900/80 dark:text-amber-200">
               Front-End Interview System
             </span>
 
             <div className="space-y-4">
-              <h1 className="max-w-4xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
+              <h1 className="max-w-4xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl dark:text-white">
                 把零散面试题整理成一套可复盘、可复述、可链接项目经验的知识库。
               </h1>
-              <p className="max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
+              <p className="max-w-2xl text-base leading-7 text-slate-600 sm:text-lg dark:text-slate-300">
                 这里不是题海，而是一套围绕基础原理、框架实战和工程化场景展开的面试路线图。
                 目标是让你在回答时既能说清“是什么”，也能说明“为什么这样做”。
               </p>
@@ -148,14 +149,14 @@ export default function HomePage() {
             <div className="flex flex-wrap gap-3">
               <Link
                 href="/docs"
-                className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white shadow-lg shadow-slate-950/15 transition hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white shadow-lg shadow-slate-950/15 transition hover:-translate-y-0.5 dark:bg-white dark:text-slate-950 dark:shadow-white/10"
               >
                 打开知识库
                 <ArrowRight className="size-4" />
               </Link>
               <Link
                 href="/docs/guide"
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-700 dark:hover:bg-slate-800"
               >
                 查看刷题策略
                 <Sparkles className="size-4" />
@@ -163,77 +164,77 @@ export default function HomePage() {
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-3xl border border-white/70 bg-white/75 p-4 shadow-sm backdrop-blur">
-                <p className="text-xs uppercase tracking-[0.22em] text-slate-400">
+              <div className="rounded-3xl border border-white/70 bg-white/75 p-4 shadow-sm backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/75">
+                <p className="text-xs uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">
                   覆盖模块
                 </p>
-                <p className="mt-2 text-2xl font-semibold text-slate-950">8+</p>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">8+</p>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                   按专题拆分高频问题与回答框架
                 </p>
               </div>
-              <div className="rounded-3xl border border-white/70 bg-white/75 p-4 shadow-sm backdrop-blur">
-                <p className="text-xs uppercase tracking-[0.22em] text-slate-400">
+              <div className="rounded-3xl border border-white/70 bg-white/75 p-4 shadow-sm backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/75">
+                <p className="text-xs uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">
                   组织方式
                 </p>
-                <p className="mt-2 text-2xl font-semibold text-slate-950">
+                <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">
                   原理 → 场景
                 </p>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                   把知识点映射到真实项目和追问链路
                 </p>
               </div>
-              <div className="rounded-3xl border border-white/70 bg-white/75 p-4 shadow-sm backdrop-blur">
-                <p className="text-xs uppercase tracking-[0.22em] text-slate-400">
+              <div className="rounded-3xl border border-white/70 bg-white/75 p-4 shadow-sm backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/75">
+                <p className="text-xs uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">
                   使用方式
                 </p>
-                <p className="mt-2 text-2xl font-semibold text-slate-950">
+                <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">
                   周复盘
                 </p>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                   每周补齐盲区并沉淀自己的表达版本
                 </p>
               </div>
             </div>
           </div>
 
-          <aside className="rounded-[2rem] border border-slate-200/80 bg-white/85 p-6 shadow-xl shadow-slate-200/50 backdrop-blur">
-            <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
-              <TimerReset className="size-4 text-slate-400" />
+          <aside className="rounded-[2rem] border border-slate-200/80 bg-white/85 p-6 shadow-xl shadow-slate-200/50 backdrop-blur dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-slate-950/20">
+            <div className="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-300">
+              <TimerReset className="size-4 text-slate-400 dark:text-slate-500" />
               本周准备节奏
             </div>
 
             <ol className="mt-6 space-y-4">
-              <li className="rounded-2xl bg-slate-50 px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+              <li className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-950/70">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
                   Day 1-2
                 </p>
-                <p className="mt-1 text-sm font-medium text-slate-900">
+                <p className="mt-1 text-sm font-medium text-slate-900 dark:text-white">
                   补全基础原理空白
                 </p>
-                <p className="mt-1 text-sm leading-6 text-slate-600">
+                <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">
                   优先复盘渲染流程、事件循环、作用域链和网络链路。
                 </p>
               </li>
-              <li className="rounded-2xl bg-slate-50 px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+              <li className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-950/70">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
                   Day 3-4
                 </p>
-                <p className="mt-1 text-sm font-medium text-slate-900">
+                <p className="mt-1 text-sm font-medium text-slate-900 dark:text-white">
                   绑定框架与项目经验
                 </p>
-                <p className="mt-1 text-sm leading-6 text-slate-600">
+                <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">
                   选择 Vue 或 React 相关问题，用最近项目中的优化案例作回答素材。
                 </p>
               </li>
-              <li className="rounded-2xl bg-slate-50 px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+              <li className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-950/70">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
                   Day 5
                 </p>
-                <p className="mt-1 text-sm font-medium text-slate-900">
+                <p className="mt-1 text-sm font-medium text-slate-900 dark:text-white">
                   做一轮场景题演练
                 </p>
-                <p className="mt-1 text-sm leading-6 text-slate-600">
+                <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">
                   从性能、构建或架构中挑一个题目，完整说出方案、取舍和落地结果。
                 </p>
               </li>
@@ -242,17 +243,17 @@ export default function HomePage() {
         </section>
 
         <section className="grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_380px]">
-          <div className="rounded-[2rem] border border-slate-200/80 bg-white/85 p-6 shadow-xl shadow-slate-200/40 backdrop-blur lg:p-7">
+          <div className="rounded-[2rem] border border-slate-200/80 bg-white/85 p-6 shadow-xl shadow-slate-200/40 backdrop-blur dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-slate-950/20 lg:p-7">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-500">
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-300">
                   Role-Based Entry
                 </p>
-                <h2 className="text-2xl font-semibold text-slate-950">
+                <h2 className="text-2xl font-semibold text-slate-950 dark:text-white">
                   按岗位级别切入，不用从目录盲找
                 </h2>
               </div>
-              <p className="max-w-sm text-sm leading-6 text-slate-500">
+              <p className="max-w-sm text-sm leading-6 text-slate-500 dark:text-slate-300">
                 按你当前目标岗位选择起步路线，先把最影响面试结果的内容补齐。
               </p>
             </div>
@@ -265,7 +266,7 @@ export default function HomePage() {
                   <Link
                     key={path.href}
                     href={path.href}
-                    className="group rounded-[1.5rem] border border-slate-200/80 bg-slate-50/80 p-5 transition hover:-translate-y-1 hover:border-slate-300 hover:bg-white hover:shadow-lg"
+                    className="group rounded-[1.5rem] border border-slate-200/80 bg-slate-50/80 p-5 transition hover:-translate-y-1 hover:border-slate-300 hover:bg-white hover:shadow-lg dark:border-slate-800 dark:bg-slate-950/70 dark:hover:border-slate-700 dark:hover:bg-slate-900"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <span
@@ -273,13 +274,13 @@ export default function HomePage() {
                       >
                         <Icon className="size-4.5" />
                       </span>
-                      <ArrowRight className="mt-1 size-4 text-slate-400 transition group-hover:translate-x-1 group-hover:text-slate-700" />
+                      <ArrowRight className="mt-1 size-4 text-slate-400 transition group-hover:translate-x-1 group-hover:text-slate-700 dark:text-slate-500 dark:group-hover:text-slate-200" />
                     </div>
 
-                    <h3 className="mt-5 text-lg font-semibold text-slate-950">
+                    <h3 className="mt-5 text-lg font-semibold text-slate-950 dark:text-white">
                       {path.title}
                     </h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                    <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
                       {path.description}
                     </p>
 
@@ -287,7 +288,7 @@ export default function HomePage() {
                       {path.focus.map((item) => (
                         <span
                           key={item}
-                          className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600"
+                          className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                         >
                           {item}
                         </span>
@@ -299,12 +300,12 @@ export default function HomePage() {
             </div>
           </div>
 
-          <aside className="rounded-[2rem] border border-slate-200/80 bg-slate-950 p-6 text-slate-50 shadow-2xl shadow-slate-900/10 lg:p-7">
-            <div className="flex items-center gap-2 text-sm font-medium text-slate-300">
+          <aside className="rounded-[2rem] border border-slate-200/80 bg-slate-950 p-6 text-slate-50 shadow-2xl shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900 lg:p-7">
+            <div className="flex items-center gap-2 text-sm font-medium text-slate-300 dark:text-slate-200">
               <Clock3 className="size-4" />
               最近补充章节
             </div>
-            <p className="mt-3 text-sm leading-6 text-slate-300">
+            <p className="mt-3 text-sm leading-6 text-slate-300 dark:text-slate-400">
               如果你只想从最值得先看的内容开始，可以直接从这里进入。
             </p>
 
@@ -313,22 +314,22 @@ export default function HomePage() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="group block rounded-[1.5rem] border border-white/10 bg-white/5 p-4 transition hover:border-white/20 hover:bg-white/10"
+                  className="group block rounded-[1.5rem] border border-white/10 bg-white/5 p-4 transition hover:border-white/20 hover:bg-white/10 dark:border-slate-800 dark:bg-slate-950/80 dark:hover:border-slate-700 dark:hover:bg-slate-950"
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <span className="rounded-full border border-white/10 bg-white/10 px-2.5 py-1 text-[11px] font-medium tracking-[0.18em] text-slate-300 uppercase">
+                    <span className="rounded-full border border-white/10 bg-white/10 px-2.5 py-1 text-[11px] font-medium tracking-[0.18em] text-slate-300 uppercase dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
                       {item.label}
                     </span>
-                    <div className="flex items-center gap-3 text-xs text-slate-400">
+                    <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
                       {item.updatedAt ? <span>{item.updatedAt}</span> : null}
                       <ArrowRight className="size-4 transition group-hover:translate-x-1 group-hover:text-white" />
                     </div>
                   </div>
 
-                  <h3 className="mt-4 text-base font-semibold text-white">
+                  <h3 className="mt-4 text-base font-semibold text-white dark:text-slate-100">
                     {item.title}
                   </h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-300">
+                  <p className="mt-2 text-sm leading-6 text-slate-300 dark:text-slate-400">
                     {item.description}
                   </p>
                 </Link>
@@ -340,14 +341,14 @@ export default function HomePage() {
         <section className="space-y-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-500">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-300">
                 Knowledge Tracks
               </p>
-              <h2 className="text-2xl font-semibold text-slate-950 sm:text-3xl">
-                按面试官最常切换的话题组织文档
+              <h2 className="text-2xl font-semibold text-slate-950 sm:text-3xl dark:text-white">
+                热门话题
               </h2>
             </div>
-            <p className="max-w-xl text-sm leading-6 text-slate-500">
+            <p className="max-w-xl text-sm leading-6 text-slate-500 dark:text-slate-300">
               每个分区都以“章节导读 + 高频问题 +
               回答要点”的方式组织，方便快速定位和二次补充。
             </p>
@@ -361,18 +362,18 @@ export default function HomePage() {
                 <Link
                   key={track.href}
                   href={track.href}
-                  className={`group rounded-[1.75rem] border border-white/80 bg-gradient-to-br ${track.tone} p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl`}
+                  className={`group rounded-[1.75rem] border border-white/80 bg-gradient-to-br ${track.tone} p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="inline-flex rounded-2xl bg-white/85 p-3 text-slate-700 shadow-sm">
+                    <span className="inline-flex rounded-2xl bg-white/85 p-3 text-slate-700 shadow-sm dark:bg-slate-800 dark:text-slate-200">
                       <Icon className="size-5" />
                     </span>
-                    <ArrowRight className="size-4 text-slate-400 transition group-hover:translate-x-1 group-hover:text-slate-700" />
+                    <ArrowRight className="size-4 text-slate-400 transition group-hover:translate-x-1 group-hover:text-slate-700 dark:text-slate-500 dark:group-hover:text-slate-200" />
                   </div>
-                  <h3 className="mt-8 text-xl font-semibold text-slate-950">
+                  <h3 className="mt-8 text-xl font-semibold text-slate-950 dark:text-white">
                     {track.title}
                   </h3>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">
+                  <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
                     {track.description}
                   </p>
                 </Link>
@@ -381,9 +382,9 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="grid gap-4 rounded-[2rem] border border-slate-200/80 bg-slate-950 px-6 py-8 text-slate-50 shadow-2xl shadow-slate-900/10 lg:grid-cols-[280px_minmax(0,1fr)] lg:px-8">
+        <section className="grid gap-4 rounded-[2rem] border border-slate-200/80 bg-slate-950 px-6 py-8 text-slate-50 shadow-2xl shadow-slate-900/10 dark:border-slate-800 dark:bg-slate-900 lg:grid-cols-[280px_minmax(0,1fr)] lg:px-8">
           <div>
-            <p className="text-sm font-medium text-slate-300">
+            <p className="text-sm font-medium text-slate-300 dark:text-slate-200">
               Interview Routine
             </p>
             <h2 className="mt-2 text-2xl font-semibold">
@@ -394,7 +395,7 @@ export default function HomePage() {
             {routines.map((item) => (
               <div
                 key={item}
-                className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm leading-6 text-slate-200"
+                className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm leading-6 text-slate-200 dark:border-slate-800 dark:bg-slate-950/80"
               >
                 {item}
               </div>
