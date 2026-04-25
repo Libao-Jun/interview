@@ -11,23 +11,27 @@ import { baseOptions } from "@/lib/layout.shared";
 import { source } from "@/lib/source";
 
 export default function Layout({ children }: LayoutProps<"/docs">) {
+  const enableAiSearch = process.env.GITHUB_PAGES !== "true";
+
   return (
     <DocsLayout tree={source.getPageTree()} {...baseOptions()}>
-      <AISearch>
-        <AISearchPanel />
-        <AISearchTrigger
-          position="float"
-          className={cn(
-            buttonVariants({
-              variant: "secondary",
-              className: "text-fd-muted-foreground rounded-2xl",
-            }),
-          )}
-        >
-          <MessageCircleIcon className="size-4.5" />
-          Ask AI
-        </AISearchTrigger>
-      </AISearch>
+      {enableAiSearch ? (
+        <AISearch>
+          <AISearchPanel />
+          <AISearchTrigger
+            position="float"
+            className={cn(
+              buttonVariants({
+                variant: "secondary",
+                className: "text-fd-muted-foreground rounded-2xl",
+              }),
+            )}
+          >
+            <MessageCircleIcon className="size-4.5" />
+            Ask AI
+          </AISearchTrigger>
+        </AISearch>
+      ) : null}
 
       {children}
     </DocsLayout>

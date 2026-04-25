@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getLLMText, getPageMarkdownUrl, source } from "@/lib/source";
 
+export const dynamic = "force-static";
 export const revalidate = false;
 
 export async function GET(

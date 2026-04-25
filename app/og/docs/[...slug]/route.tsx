@@ -4,6 +4,7 @@ import { ImageResponse } from "next/og";
 import { appName } from "@/lib/shared";
 import { getPageImage, source } from "@/lib/source";
 
+export const dynamic = "force-static";
 export const revalidate = false;
 
 export async function GET(

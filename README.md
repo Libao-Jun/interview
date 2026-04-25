@@ -49,6 +49,11 @@ INKEEP_API_KEY=
 
 如果暂时不接入 Inkeep，可以先留空；页面仍可正常启动，但 Ask AI 功能不可用。
 
+## GitHub Pages 发布
+
+- 已添加 GitHub Actions 工作流，推送到 `main` 分支后会自动执行静态构建并发布到 GitHub Pages。
+- Pages 构建会关闭 `Ask AI` 入口，因为 GitHub Pages 不支持当前的 `/api/chat` 服务端接口。
+
 ## 参考资料
 
 - <https://fumadocs.dev/docs>
