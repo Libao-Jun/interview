@@ -1,23 +1,350 @@
 ---
 title: 项目架构与交付
-description: 适合回答多人协作、模块拆分和工程治理类问题。
+description: 从分层设计、模块边界到发布治理，整理前端工程化面试的完整回答路径。
+icon: FolderTree
 featuredOnHome: true
 homeLabel: 工程化
-updatedAt: 2026-04-21
+updatedAt: 2026-05-23
 ---
 
-## 高频问题
+<Callout type="info">
+架构题不是问目录怎么摆，而是考你是否理解：业务复杂度如何映射到模块边界、多人协作如何不失控、前端交付链路如何保证稳定。先讲问题，再讲方案，最后讲权衡。
+</Callout>
 
-- 如何拆分前端项目的目录和模块边界？
-- 如何保证多人协作下的稳定性和可维护性？
-- 如何设计发布流程、灰度和回滚机制？
+## 高频主线
 
-## 回答切入点
+- 前端架构如何分层，模块边界怎么划分
+- 关注点分离如何在前端落地
+- 微前端何时引入、如何选型
+- Monorepo vs Polyrepo 如何取舍
+- 前端 CI/CD 如何设计，构建和发布怎么保证稳定
+- 代码规范和团队协作如何不失控
 
-- 业务复杂度：页面多、角色多、流程多
-- 技术约束：性能、权限、稳定性、可观测性
-- 工程策略：规范、CI、测试、发布和监控
+## 前端架构分层 — 从系统级到代码级
 
-## 面试里的加分项
+| 层级 | 关注点 | 典型决策 |
+| ---- | ------ | -------- |
+| 系统级 | SPA/SSR/SSG 选型、微前端拆分 | 渲染模式、应用拆分策略 |
+| 应用级 | 脚手架、组件库、状态管理 | 技术选型、目录结构、状态架构 |
+| 模块级 | 组件化、模块化、领域划分 | 模块边界、依赖方向、通信方式 |
+| 代码级 | 规范、原则、质量 | ESLint/Prettier、TS 类型、Git 规范 |
 
-如果你能补充“为什么当时不用另一套方案”，通常能把回答从经验陈述提升为工程判断。
+## 关注点分离 — 前端分层架构
+
+前端分层不是照搬后端 Clean Architecture，而是根据前端的特点做关注点分离：UI 渲染、业务逻辑、数据获取各归其位。
+
+### 三层分离
+
+```
+┌──────────────────────────────┐
+│  视图层（View）               │  ← 页面、组件、样式
+│  只做渲染和用户交互            │
+├──────────────────────────────┤
+│  逻辑层（Logic）              │  ← Composable / Hook / Store
+│  业务逻辑、状态管理、数据转换  │
+├──────────────────────────────┤
+│  数据层（Data）               │  ← API 封装、缓存、Mock
+│  接口调用、数据适配、错误处理  │
+└──────────────────────────────┘
+  依赖方向：上 → 下（视图依赖逻辑，逻辑依赖数据）
+```
+
+### 前端落地目录结构
+
+```
+src/
+├── api/                # 数据层 — 接口封装 + 类型定义
+│   ├── user.ts         # 用户相关 API
+│   └── types.ts        # 接口返回值类型
+├── composables/        # 逻辑层 — 组合式函数（Vue）/ hooks（React）
+│   └── useUser.ts      # 用户业务逻辑
+├── store/              # 逻辑层 — 全局状态（Pinia / Zustand）
+├── components/         # 视图层 — 可复用组件
+│   ├── ui/             # 基础 UI 组件（Button、Input）
+│   └── business/       # 业务组件（UserCard、OrderList）
+├── pages/              # 视图层 — 页面组件
+├── router/             # 路由配置
+├── types/              # 全局 TypeScript 类型
+├── utils/              # 工具函数（纯函数，无副作用）
+└── styles/             # 全局样式
+```
+
+### 分层的核心规则
+
+| 规则 | 说明 | 反例 |
+| ---- | ---- | ---- |
+| 视图层不直接调 API | 通过 Composable / Store 间接获取数据 | 组件内 `fetch('/api/user')` |
+| 逻辑层不操作 DOM | 通过响应式数据驱动视图更新 | Hook 内 `document.querySelector` |
+| 数据层不含业务逻辑 | 只负责请求封装和类型定义 | API 文件内做数据格式转换 |
+| 依赖方向单向 | 上层依赖下层，下层不知道上层 | Store 导入页面组件 |
+
+<Callout>
+前端分层的核心价值：**组件只管渲染、逻辑抽到 Composable、API 只管请求**。三层各司其职，改一层不影响其他层。不需要引入 Entity/UseCase/Repository 等后端概念，按前端特点做分离即可。
+</Callout>
+
+## 微前端 — 拆分大型应用
+
+### 适用场景
+
+- 多团队并行开发，各自独立部署
+- 渐进式技术栈升级（旧系统 + 新系统共存）
+- 复杂应用的模块化拆分
+
+<Callout type="warn">
+微前端不是银弹。小型应用引入微前端只会增加复杂度。判断标准：是否有多团队独立交付的需求，或者是否需要渐进式迁移旧系统。
+</Callout>
+
+### 方案对比
+
+| 方案 | 隔离性 | 性能 | 学习成本 | 适用场景 |
+| ---- | ------ | ---- | -------- | -------- |
+| qiankun | JS 沙箱隔离 | 中 | 中 | 成熟项目、需要完整沙箱 |
+| Module Federation | 模块级共享 | 高 | 中高 | Webpack 5 生态、组件共享 |
+| Micro App | WebComponent 隔离 | 高 | 低 | 零侵入、轻量级 |
+| iframe | 完全隔离 | 低 | 低 | 完全隔离需求（如第三方嵌入） |
+| Astro Islands | 按需水合 | 极高 | 中 | 内容站 + 少量交互 |
+
+### 微前端设计要点
+
+| 要点 | 说明 |
+| ---- | ---- |
+| 应用自治 | 子应用之间不存在运行时依赖 |
+| 单一职责 | 每个子应用负责一个业务领域 |
+| 技术栈无关 | 子应用可独立选择框架 |
+| 中心化注册 | 需要应用注册表（JSON 配置或后端服务） |
+| 生命周期管理 | load → bootstrap → mount → unmount |
+| 通信机制 | 事件总线 / 共享状态 / URL 参数 / CustomEvent |
+
+## Monorepo vs Polyrepo — 代码组织策略
+
+| 维度 | Monorepo | Polyrepo |
+| ---- | -------- | -------- |
+| 代码共享 | 直接引用，无需发包 | 需发包 + 版本管理 |
+| 重构范围 | 全局一次性重构 | 逐包升级，协调成本高 |
+| CI 效率 | 增量构建（Turborepo/Nx） | 各仓库独立 CI |
+| 权限控制 | CODEOWNERS 按目录分配 | 仓库级权限天然隔离 |
+| 依赖管理 | 统一版本，无幽灵依赖 | 各仓库独立，版本可能不一致 |
+| 适用规模 | 中大型团队 + 共享组件库 | 小团队 / 独立产品 |
+
+```
+# Monorepo 典型结构（pnpm workspace）
+packages/
+├── ui/          # 组件库
+├── utils/       # 工具库
+├── app-admin/   # 管理后台
+└── app-h5/      # H5 应用
+```
+
+<Callout>
+Monorepo 的核心收益是**跨项目共享和统一重构**，代价是 CI 复杂度增加。使用 Turborepo/Nx 的增量构建和远程缓存可以大幅缓解 CI 问题。
+</Callout>
+
+## 组件化设计 — 从原子到页面
+
+| 层级 | 说明 | 示例 |
+| ---- | ---- | ---- |
+| 原子组件 | 最小粒度 UI 组件，框架/业务无关 | Button、Input、Icon |
+| 复合组件 | 由原子组件组合，有联动效果 | SearchBar、FormInput |
+| 业务组件 | 绑定业务逻辑，跨页面复用 | UserCard、OrderStatus |
+| 页面组件 | 组合业务组件形成完整页面 | UserProfile、OrderList |
+| 布局组件 | 应用级壳组件 | Layout、AppShell |
+
+<Callout>
+组件化不是拆得越细越好。过度拆分导致：组件间通信复杂、调试链路变长、文件跳转频繁。按"是否会被复用"和"是否独立变化"来决定拆分粒度。
+</Callout>
+
+### 组件通信方式选择
+
+| 场景 | 推荐方式 | 说明 |
+| ---- | -------- | ---- |
+| 父→子数据 | props | 单向数据流 |
+| 子→父事件 | emit / onEvent | 事件通知 |
+| 跨层级 | provide/inject | 避免 props 逐层透传 |
+| 全局状态 | Pinia / Zustand | 多组件共享 |
+| 兄弟组件 | 状态提升到共同父级 | 或使用全局状态 |
+
+## 前端 API 层设计 — 管理好与后端的契约
+
+### API 层封装原则
+
+| 原则 | 做法 | 收益 |
+| ---- | ---- | ---- |
+| 按领域分文件 | `api/user.ts`、`api/order.ts` | 接口变更只改一处 |
+| TS 类型定义 | 请求参数 + 返回值定义 Interface | 字段变更编译报错 |
+| 统一错误处理 | axios 拦截器 / fetch wrapper | 错误码统一处理，不用每个调用方重复写 |
+| 请求/响应拦截 | token 注入、数据适配 | 业务层不关心请求细节 |
+| Mock 支持 | 开发阶段拦截 API 返回模拟数据 | 前后端并行开发 |
+
+### API 调用层代码组织
+
+```ts
+// api/user.ts — 数据层
+import type { User, UserProfile } from './types'
+import { request } from '@/utils/request'
+
+export function getUser(id: string): Promise<User> {
+  return request.get(`/users/${id}`)
+}
+
+export function updateUser(id: string, data: Partial<UserProfile>) {
+  return request.patch(`/users/${id}`, data)
+}
+```
+
+```ts
+// composables/useUser.ts — 逻辑层
+export function useUser(id: Ref<string>) {
+  const user = ref<User>()
+  const loading = ref(false)
+
+  async function fetchUser() {
+    loading.value = true
+    try {
+      user.value = await getUser(id.value)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  watch(id, fetchUser, { immediate: true })
+  return { user, loading, fetchUser }
+}
+```
+
+```vue
+<!-- pages/UserProfile.vue — 视图层 -->
+<script setup lang="ts">
+const { id } = defineProps<{ id: string }>()
+const { user, loading } = useUser(toRef(() => id))
+</script>
+
+<template>
+  <Spinner v-if="loading" />
+  <UserCard v-else-if="user" :user="user" />
+</template>
+```
+
+<Callout>
+三层分工：API 只管请求和类型、Composable 管业务逻辑和状态、组件只管渲染。后端接口变了只改 API 层，业务逻辑变了只改 Composable，UI 变了只改组件——各层独立变化。
+</Callout>
+
+## 状态管理架构 — 按作用域选择方案
+
+| 作用域 | 推荐方案 | 说明 |
+| ------ | -------- | ---- |
+| 组件内部 | `ref` / `useState` | 无需全局状态 |
+| 父子通信 | props + emit | 单向数据流 |
+| 跨级通信 | provide/inject（Vue）/ Context（React） | 避免 props 透传 |
+| 多组件共享 | Pinia / Zustand | 全局状态，支持 devtools |
+| 服务端状态 | TanStack Query / SWR | 缓存 + 自动重新获取 + 去重 |
+
+<Callout type="warn">
+不是所有状态都要放全局 Store。TanStack Query 管理服务端状态（API 缓存、loading、重新获取）比全局 Store 更合适——避免手动管理 loading/error/data 三元组。
+</Callout>
+
+## 代码规范 — 团队协作的底线
+
+| 工具 | 用途 | 配置文件 |
+| ---- | ---- | -------- |
+| ESLint | 代码质量检查 | `eslint.config.js` |
+| Prettier | 代码格式化 | `.prettierrc` |
+| TypeScript | 类型安全 | `tsconfig.json` |
+| commitlint | Git 提交信息规范 | `commitlint.config.js` |
+| husky + lint-staged | 提交时自动检查 | `.husky/pre-commit` |
+
+### Git 提交规范（Conventional Commits）
+
+```
+type(scope): subject
+
+feat(user): 添加用户头像上传功能
+fix(order): 修复订单金额计算精度问题
+refactor(api): 统一接口错误处理逻辑
+perf(list): 虚拟滚动优化长列表渲染
+```
+
+| 类型 | 含义 |
+| ---- | ---- |
+| feat | 新功能 |
+| fix | Bug 修复 |
+| refactor | 重构（不改功能） |
+| perf | 性能优化 |
+| docs | 文档更新 |
+| test | 测试相关 |
+| chore | 构建/依赖/工具 |
+
+## 前端测试策略 — 金字塔模型
+
+```
+        E2E 测试（10%）  — 关键链路验证
+       ─────────────
+     集成测试（20%）   — 组件交互、API 对接
+    ─────────────────
+   单元测试（70%）    — 函数、Composable、Utils
+```
+
+| 层级 | 工具 | 关注点 | 运行频率 |
+| ---- | ---- | ------ | -------- |
+| 单元测试 | Vitest / Jest | 函数逻辑、Composable、Utils | 每次提交 |
+| 组件测试 | Testing Library | 组件渲染、用户交互 | 每次提交 |
+| 集成测试 | Testing Library | 组件组合、Store + API Mock | 每次提交 |
+| E2E 测试 | Playwright / Cypress | 关键业务流程 | 合入主分支 |
+
+<Callout>
+前端测试优先覆盖：工具函数（纯函数最容易测）→ Composable / Hook（核心逻辑）→ 业务组件（关键交互）。不需要追求 100% 覆盖率，关键路径覆盖比数字更重要。
+</Callout>
+
+## 前端 CI/CD — 构建与发布
+
+### CI 流程
+
+```
+代码提交 → Lint 检查 → 类型检查 → 单元测试 → 构建产物 → 部署预览环境
+```
+
+### 前端构建优化
+
+| 策略 | 工具 | 收益 |
+| ---- | ---- | ---- |
+| 增量构建 | Turborepo / Nx | 只构建变更的包 |
+| 远程缓存 | Turborepo Remote Cache | CI 命中缓存直接跳过 |
+| 构建产物缓存 | webpack5 持久化缓存 / Vite 预构建 | 本地开发加速 |
+| 并行构建 | Turborepo 并行任务图 | 多包同时构建 |
+
+### 前端发布策略
+
+| 策略 | 做法与前端关联 | 收益 |
+| ---- | -------------- | ---- |
+| 静态资源 CDN 部署 | 构建产物上传 CDN，HTML 引用带 hash 资源 | 强缓存 + 即时生效 |
+| 灰度发布 | 通过配置开关控制新功能可见范围 | 小范围验证后再全量 |
+| 功能开关（Feature Flag） | 代码内判断开关，运行时控制功能启用 | 不发版也能控制功能 |
+| 版本回滚 | 保留历史构建产物，回滚即切换 HTML 引用 | 快速恢复 |
+
+<Callout>
+前端发布的独特优势：**静态资源带 hash 可永久缓存，HTML 不带 hash 每次拉最新**。这意味着发布就是更新 HTML 中的引用路径，回滚就是切回旧 HTML。理解这一点，才能设计出合理的发布策略。
+</Callout>
+
+## 面试加分项 — 从经验陈述到工程判断
+
+| 层次 | 表达方式 | 示例 |
+| ---- | -------- | ---- |
+| 初级 | 罗列技术名词 | "我们用了 Vue + Pinia + Vite" |
+| 中级 | 讲清方案和原因 | "选 Pinia 是因为 Vuex 的 Mutation 增加心智负担" |
+| 高级 | 讲清权衡和取舍 | "当时考虑过 Redux，但团队对 Vue 生态更熟，迁移成本评估后选了 Pinia" |
+
+<Callout>
+面试中能补充"为什么当时不用另一套方案"，通常能把回答从经验陈述提升为工程判断。架构题的核心不是你用了什么，而是你为什么这样选、取舍了什么。
+</Callout>
+
+## 常见误区
+
+| 误区 | 正解 |
+| ---- | ---- |
+| 微前端是银弹 | 只在多团队/渐进迁移场景才值得引入 |
+| 分层越深越好 | 前端三层（View/Logic/Data）足够，层越多数据转换开销越大 |
+| Monorepo 一定比 Polyrepo 好 | 小团队 / 独立产品用 Polyrepo 更简单 |
+| 组件拆得越细越好 | 过度拆分导致通信复杂、调试链路变长 |
+| 100% 测试覆盖率就是好 | 关键路径覆盖比数字更重要 |
+| 所有状态放全局 Store | 服务端状态用 TanStack Query，组件状态用 ref |
+| 状态管理只有 Pinia/Zustand | 作用域不同方案不同：props → provide → Store → Query |
+| 发布就是传文件 | 理解 hash 资源 + CDN + HTML 入口的发布模型 |

@@ -57,7 +57,15 @@
       "Bash(curl -sL \"https://htmlpage.cn/topics/frontend/vue-website-performance-checklist\")",
       "Bash(curl -sL \"https://htmlpage.cn/topics/nuxt/nuxt-performance-optimization-guide\")",
       "Bash(curl -sL \"https://htmlpage.cn/topics/performance/core-web-vitals-2026-guide\")",
-      "Bash(curl -sL \"https://htmlpage.cn/topics/performance/web-vitals-guide\")"
+      "Bash(curl -sL \"https://htmlpage.cn/topics/performance/web-vitals-guide\")",
+      "Bash(curl -sL \"https://xiaobaiha.gitbook.io/tech-share/engineering/qian-duan-jia-gou\")",
+      "Bash(curl -sL \"https://phodal.github.io/clean-frontend/\")",
+      "Bash(curl -sL \"https://www.tzagileteam.com/web/engineering-architecture\")",
+      "Bash(curl -s \"https://api.github.com/repos/phodal/clean-frontend/contents/\")",
+      "Bash(python3 -c \"import sys,json;[print\\(x['name']\\) for x in json.loads\\(sys.stdin.read\\(\\)\\)]\")",
+      "Bash(curl -s \"https://api.github.com/repos/phodal/clean-frontend/git/trees/master?recursive=1\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/phodal/clean-frontend/master/docs/clean-angular.article.md\")",
+      "Bash(curl -s https://raw.githubusercontent.com/phodal/clean-frontend/master/__TRACKED_VAR__)"
     ]
   }
 }
