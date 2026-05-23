@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx skills *)",
+      "Read(//c/Users/wmj/.agents/skills/design-md/**)",
+      "mcp__ide__getDiagnostics",
+      "Bash(npx next *)",
+      "Bash(node -e \"const f = require\\('fumadocs-ui'\\); console.log\\(Object.keys\\(f\\).filter\\(k => /step|callout|tab/i.test\\(k\\)\\)\\)\")",
+      "Bash(node -e \"const f = require\\('fumadocs-ui'\\); console.log\\(Object.keys\\(f\\).sort\\(\\).join\\('\\\\n'\\)\\)\")"
+    ]
+  }
+}

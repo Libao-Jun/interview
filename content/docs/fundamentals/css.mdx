@@ -1,4 +1,141 @@
 ---
 title: CSS
-description: 样式描述语言。核心能力：选择器优先级、盒模型、Flex/Grid 布局、动画/过渡、响应式（媒体查询）、层叠与继承。
+description: 布局、渲染与视觉表现层。核心能力：盒模型、BFC、选择器优先级、Flex/Grid、重排与重绘、响应式。
+icon: Palette
 ---
+
+<Callout type="info">
+布局问题建议用 DevTools Layout 面板验证；性能问题建议用 Performance 面板观察 Layout Shift 和 Paint 面积。
+</Callout>
+
+## 盒模型
+
+所有 HTML 元素可以看作盒子，由内到外四层：**Content → Padding → Border → Margin**
+
+### 标准盒模型（`box-sizing: content-box`）
+
+```
+width = content width
+总宽度 = width + padding + border + margin
+```
+
+### 怪异盒模型（`box-sizing: border-box`）
+
+```
+width = content + padding + border
+总宽度 = width + margin
+```
+
+<Callout type="warn">
+现代项目推荐全局设置 `box-sizing: border-box`，避免 padding 撑大容器。
+</Callout>
+
+## BFC（块级格式化上下文）
+
+### 触发条件
+
+- 根元素 `<html>`
+- `float` 不为 `none`
+- `position` 为 `absolute` / `fixed`
+- `display` 为 `inline-block` / `flex` / `grid` / `table-cell` / `flow-root`
+- `overflow` 不为 `visible`
+
+### BFC 特性
+
+| 特性                     | 应用场景                     |
+| ------------------------ | ---------------------------- |
+| 内部 Box 垂直排列        | —                            |
+| 同一 BFC 内相邻 Margin 重叠 | 避免用同一个 BFC 或改为 Flex  |
+| BFC 区域不会与浮动元素重叠 | 实现自适应两栏布局           |
+| 计算 BFC 高度时包含浮动子元素 | 清除浮动                  |
+
+## 选择器优先级
+
+优先级从高到低：
+
+1. `!important` — 最高，覆盖一切
+2. 内联样式（`style="..."`）— 权重 1,0,0,0
+3. ID 选择器 — 权重 0,1,0,0
+4. 类 / 伪类 / 属性选择器 — 权重 0,0,1,0
+5. 标签 / 伪元素选择器 — 权重 0,0,0,1
+6. 通配符 `*` — 权重 0,0,0,0
+
+<Callout>
+相同权重下，后定义的覆盖先定义的（层叠规则）。
+</Callout>
+
+## 可继承属性与不可继承属性
+
+| 可继承                     | 不可继承                         |
+| -------------------------- | -------------------------------- |
+| `font-size` / `font-family` | `border` / `padding` / `margin` |
+| `color` / `line-height`    | `width` / `height`               |
+| `text-align` / `visibility`| `display` / `position`           |
+| `cursor` / `list-style`    | `background` / `overflow`        |
+
+## 布局方案
+
+### Flex
+
+| 属性            | 作用                         |
+| --------------- | ---------------------------- |
+| `display: flex` | 开启弹性布局                 |
+| `flex-direction`| 主轴方向：`row` / `column`   |
+| `justify-content`| 主轴对齐：`center` / `space-between` |
+| `align-items`   | 交叉轴对齐                   |
+| `flex-wrap`     | 是否换行                     |
+| `flex: 1`       | 自动填充剩余空间             |
+
+### Grid
+
+| 属性                   | 作用                              |
+| ---------------------- | --------------------------------- |
+| `display: grid`        | 开启网格布局                      |
+| `grid-template-columns`| 定义列轨道                        |
+| `grid-template-rows`   | 定义行轨道                        |
+| `grid-gap`             | 间距简写                          |
+| `grid-area`            | 命名区域放置                      |
+
+## 水平垂直居中
+
+| 方案                      | 适用场景         | 关键代码                                        |
+| ------------------------- | ---------------- | ----------------------------------------------- |
+| Flex                      | 通用             | `justify-content: center; align-items: center`  |
+| Grid `place-items`        | 通用             | `place-items: center`                           |
+| 绝对定位 + transform      | 已知/未知尺寸    | `left: 50%; top: 50%; transform: translate(-50%, -50%)` |
+| 绝对定位 + margin auto    | 已知尺寸         | `inset: 0; margin: auto`                        |
+
+## 响应式设计
+
+- **媒体查询**：`@media (max-width: 768px) { ... }`
+- **相对单位**：`rem` / `em` / `vw` / `vh` / `%`
+- **弹性布局**：Flex / Grid 自动缩放
+- **响应式图片**：`<img srcset="..." sizes="...">`
+- **视口设置**：`<meta name="viewport" content="width=device-width, initial-scale=1.0">`
+
+## 重排与重绘
+
+| 操作       | 触发           | 代价 |
+| ---------- | -------------- | ---- |
+| 重排 (Layout) | 几何属性变化（`width`/`height`/`margin`/`position`） | 高 |
+| 重绘 (Paint)  | 视觉属性变化（`color`/`background`/`visibility`）   | 中 |
+| 合成 (Composite) | `transform`/`opacity` | 低  |
+
+<Callout type="warn">
+性能优化核心：**减少重排**。使用 `transform` 代替 `top/left`；使用 `will-change` 提升合成层；批量修改 DOM 后一次性读取布局。
+</Callout>
+
+## CSS 预处理器
+
+Sass / Less / Stylus 提供的能力：
+
+- 变量：`$color` / `@color`
+- 嵌套：层级书写
+- Mixin：复用样式片段
+- 函数：运算与逻辑
+
+## CSS Modules
+
+- 每个模块有独立作用域，避免全局污染
+- 编译时生成唯一类名：`.btn_x4f2a`
+- 适用于 React / Vue 等组件化项目

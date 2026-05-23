@@ -1,4 +1,184 @@
 ---
 title: TypeScript
-description: JavaScript 的静态类型超集，提供编译时类型检查与 IDE 增强能力。核心价值：降低大型项目维护成本、提升重构安全感。
+description: 静态类型系统与工程安全。核心能力：类型体操、泛型约束、条件类型、映射类型、类型守卫。
+icon: Shield
 ---
+
+<Callout type="info">
+TS 面试常考的不是 API 记忆，而是"能不能把运行时问题提前到编译期"。从 this 出发解释为什么需要类型，比罗列语法更有说服力。
+</Callout>
+
+## 类型系统概览
+
+| 分类     | 示例                                          |
+| -------- | --------------------------------------------- |
+| 基本类型 | `string` / `number` / `boolean` / `null` / `undefined` |
+| 对象类型 | `object` / `{ name: string }` / `interface`   |
+| 联合类型 | `string \| number`                            |
+| 交叉类型 | `A & B`                                       |
+| 字面量类型 | `'left' \| 'right' \| 'center'`             |
+| 泛型     | `T` / `T extends U` / `T = Default`           |
+
+## interface vs type
+
+| 特性         | `interface`              | `type`                   |
+| ------------ | ------------------------ | ------------------------ |
+| 对象描述     | 支持                     | 支持                     |
+| 继承         | `extends`                | 交叉 `&`                |
+| 声明合并     | 支持（同名词典自动合并） | 不支持                   |
+| 联合/交叉    | 不支持                   | 支持                     |
+| 基本类型别名 | 不支持                   | 支持                     |
+| 计算属性     | 不支持                   | 支持                     |
+
+<Callout>
+优先用 `interface`（声明合并、可扩展性），需要联合/交叉/计算属性时用 `type`。
+</Callout>
+
+## 泛型
+
+### 基本用法
+
+```ts
+function identity<T>(value: T): T {
+  return value
+}
+
+// 泛型约束
+function getLength<T extends { length: number }>(arg: T): number {
+  return arg.length
+}
+
+// 默认类型
+interface PaginatedResponse<T = User> {
+  data: T[]
+  total: number
+}
+```
+
+### 常见泛型工具类型
+
+| 工具类型        | 作用                         | 示例                                  |
+| --------------- | ---------------------------- | ------------------------------------- |
+| `Partial<T>`    | 所有属性变可选               | `Partial<User>`                       |
+| `Required<T>`   | 所有属性变必填               | `Required<User>`                      |
+| `Readonly<T>`   | 所有属性只读                 | `Readonly<User>`                      |
+| `Pick<T, K>`    | 选取部分属性                 | `Pick<User, 'name' \| 'age'>`        |
+| `Omit<T, K>`    | 排除部分属性                 | `Omit<User, 'password'>`             |
+| `Record<K, V>`  | 构造键值对类型               | `Record<string, number>`             |
+| `Exclude<U, E>` | 从联合类型中排除             | `Exclude<'a' \| 'b', 'a'>` → `'b'`  |
+| `Extract<U, E>` | 从联合类型中提取             | `Extract<'a' \| 'b', 'a'>` → `'a'`  |
+| `ReturnType<T>` | 获取函数返回值类型           | `ReturnType<typeof fn>`              |
+| `Parameters<T>` | 获取函数参数类型元组         | `Parameters<typeof fn>`              |
+
+## 条件类型
+
+```ts
+// 基本形式
+type IsString<T> = T extends string ? true : false
+
+// 条件分发（对联合类型逐个判断）
+type ToArray<T> = T extends any ? T[] : never
+type Result = ToArray<string | number> // string[] | number[]
+
+// 阻止分发：用 [T]
+type NoDistribute<T> = [T] extends [any] ? T[] : never
+```
+
+### infer 关键字
+
+在条件类型中推断子类型：
+
+```ts
+type UnpackPromise<T> = T extends Promise<infer U> ? U : T
+type Result = UnpackPromise<Promise<string>> // string
+```
+
+## 映射类型
+
+```ts
+// 基本映射
+type Optional<T> = {
+  [K in keyof T]?: T[K]
+}
+
+// 键的重映射（TS 4.1+）
+type Getters<T> = {
+  [K in keyof T as `get${Capitalize<string & K>}`]: () => T[K]
+}
+```
+
+## 类型守卫
+
+| 方式             | 示例                                       |
+| ---------------- | ------------------------------------------ |
+| `typeof`         | `typeof x === 'string'`                    |
+| `instanceof`     | `x instanceof Date`                        |
+| `in`             | `'name' in obj`                            |
+| 字面量类型       | `x === 'left'`                             |
+| 自定义守卫       | `function isString(x: any): x is string`   |
+
+## 枚举
+
+| 类型         | 编译产物        | 反向映射 | 场景         |
+| ------------ | --------------- | -------- | ------------ |
+| 数字枚举     | 双向映射对象    | 有       | 默认         |
+| 字符串枚举   | 单向映射对象    | 无       | 可读性高     |
+| `const enum` | 内联替换        | 无       | 追求零开销   |
+
+<Callout type="warn">
+`const enum` 在 `isolatedModules` 模式下有跨模块风险，建议用字符串字面量联合类型替代。
+</Callout>
+
+## 类型兼容性
+
+### 结构化类型系统
+
+TS 采用**结构化类型**（鸭子类型），只要形状匹配就兼容，不看声明来源。
+
+```ts
+interface A { name: string }
+interface B { name: string }
+const a: A = { name: 'x' }
+const b: B = a // OK — 结构相同
+```
+
+### 协变与逆变
+
+| 位置   | 方向   | 示例                                 |
+| ------ | ------ | ------------------------------------ |
+| 返回值 | 协变   | `() => Dog` 可赋值给 `() => Animal` |
+| 参数   | 逆变   | `(a: Animal) => void` 可赋值给 `(d: Dog) => void` |
+| 双向   | 双变   | `strictFunctionTypes: false` 时参数双变 |
+
+## 声明文件
+
+- `.d.ts` 只包含类型声明，不产生运行时代码
+- `declare module 'xxx'` 声明外部模块
+- `declare global` 扩展全局类型
+- `@types/xxx` 社区维护的类型定义（DefinitelyTyped）
+
+## 常见面试手写题
+
+### 实现 DeepPartial
+
+```ts
+type DeepPartial<T> = {
+  [K in keyof T]?: T[K] extends object
+    ? T[K] extends Function
+      ? T[K]
+      : DeepPartial<T[K]>
+    : T[K]
+}
+```
+
+### 实现 DeepReadonly
+
+```ts
+type DeepReadonly<T> = {
+  readonly [K in keyof T]: T[K] extends object
+    ? T[K] extends Function
+      ? T[K]
+      : DeepReadonly<T[K]>
+    : T[K]
+}
+```
