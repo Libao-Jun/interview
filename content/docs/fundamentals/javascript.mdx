@@ -1,4 +1,209 @@
 ---
 title: JavaScript
-description: 动态、弱类型、基于原型的脚本语言，浏览器与 Node.js 的通用运行时基础。核心特性：闭包、原型链、事件循环、异步模型（Promise/Async）。
+description: 语言核心机制与执行模型。核心能力：数据类型、原型链、闭包、this、事件循环、异步编程。
+icon: Braces
 ---
+
+<Callout type="info">
+JS 题多围绕"为什么"：为什么有暂时性死区？为什么箭头函数没有 this？把设计意图说清楚，比背定义更有说服力。
+</Callout>
+
+## 数据类型
+
+### 分类
+
+| 基本类型（7）                         | 引用类型          |
+| ------------------------------------- | ----------------- |
+| `number` / `string` / `boolean`      | `Object`          |
+| `undefined` / `null` / `symbol` / `bigint` | `Array` / `Function` / `Date` / `RegExp` 等 |
+
+### 核心区别
+
+- 基本类型：值存储在栈中，赋值是值拷贝
+- 引用类型：引用存储在栈中，对象存储在堆中，赋值是引用拷贝
+
+## 类型判断
+
+| 方式                  | 基本类型 | null  | Array | NaN   | 自定义类 |
+| --------------------- | -------- | ----- | ----- | ----- | -------- |
+| `typeof`              | 准确    | `"object"` | —   | `"number"` | —      |
+| `instanceof`          | —       | —     | 准确  | —     | 准确     |
+| `Object.prototype.toString.call()` | 准确 | 准确 | 准确 | 准确 | 准确 |
+
+```js
+Object.prototype.toString.call(null)       // "[object Null]"
+Object.prototype.toString.call([])         // "[object Array]"
+Object.prototype.toString.call(NaN)        // "[object Number]"
+```
+
+<Callout>
+`typeof null === "object"` 是 JS 历史遗留 Bug（JS 初期值以 000 开头表示对象，null 全零被误判）。
+</Callout>
+
+## 类型转换
+
+### 隐式转换规则
+
+- `==` 比较时会进行类型转换，`===` 不会
+- 对象转基本类型：依次调用 `[Symbol.toPrimitive]` → `valueOf()` → `toString()`
+- `+` 运算符：有字符串则拼接，否则数值相加
+- `-` / `*` / `/` 运算符：全部转数值
+
+### 经典题目
+
+```js
+[] == ![]     // true  → [] == false → '' == 0 → 0 == 0
+[] == []      // false → 两个不同引用
+'' == 0       // true
+null == undefined // true
+```
+
+## 原型与原型链
+
+### 核心关系
+
+```
+实例.__proto__ === 构造函数.prototype
+构造函数.prototype.constructor === 构造函数
+Object.prototype.__proto__ === null  // 链的终点
+```
+
+### 查找机制
+
+当访问对象属性时，沿着 `__proto__` 逐级向上查找，直到 `null`。
+
+```
+实例 → 构造函数.prototype → Object.prototype → null
+```
+
+### 继承方案
+
+| 方案               | 优点               | 缺点                       |
+| ------------------ | ------------------ | -------------------------- |
+| 原型链继承         | 简单               | 引用类型共享、无法传参     |
+| 构造函数继承       | 可传参、不共享     | 无法继承原型方法           |
+| 组合继承           | 兼顾两者           | 调用两次父构造函数         |
+| 寄生组合继承       | 最优传统方案       | 写法稍复杂                 |
+| ES6 `class extends`| 语法简洁           | 本质仍是原型链 + 寄生组合  |
+
+## 闭包
+
+函数与其词法环境的组合，使内部函数可以访问外部函数的变量。
+
+### 形成条件
+
+1. 存在内嵌函数
+2. 内嵌函数引用了外层变量
+3. 内嵌函数被返回或在更外层被使用
+
+### 应用场景
+
+- 数据私有化：模块模式、防篡改对象
+- 函数工厂：柯里化、偏应用
+- 状态保持：计数器、缓存（memoization）
+- 回调与事件：定时器、事件监听
+
+### 经典问题：循环中的闭包
+
+```js
+// 问题：输出 3 3 3
+for (var i = 0; i < 3; i++) {
+  setTimeout(() => console.log(i), 0)
+}
+
+// 方案 1：let 块级作用域
+for (let i = 0; i < 3; i++) { ... }
+
+// 方案 2：IIFE 创建独立作用域
+for (var i = 0; i < 3; i++) {
+  (function(j) {
+    setTimeout(() => console.log(j), 0)
+  })(i)
+}
+```
+
+## this 指向
+
+| 调用方式         | `this` 指向           |
+| ---------------- | --------------------- |
+| 普通函数调用     | 全局对象（严格模式 `undefined`） |
+| 方法调用         | 调用对象              |
+| `new` 调用       | 新创建的实例          |
+| `call/apply/bind`| 第一个参数            |
+| 箭头函数         | 定义时外层 `this`     |
+
+### bind / call / apply
+
+| 方法     | 调用方式           | 执行时机   |
+| -------- | ------------------ | ---------- |
+| `call`   | `fn.call(thisArg, a, b)` | 立即 |
+| `apply`  | `fn.apply(thisArg, [a, b])`| 立即 |
+| `bind`   | `fn.bind(thisArg)` | 返回新函数 |
+
+## 事件循环（Event Loop）
+
+### 执行模型
+
+```
+┌──────────────────────────┐
+│       Call Stack          │
+├──────────────────────────┤
+│  同步代码执行             │
+│  ↓ 清空后检查任务队列     │
+├──────────────────────────┤
+│  微任务（Microtask）      │ ← 优先、全部执行
+│  · Promise.then/catch     │
+│  · MutationObserver       │
+│  · queueMicrotask         │
+├──────────────────────────┤
+│  宏任务（Macrotask）      │ ← 每次取一个
+│  · setTimeout/setInterval │
+│  · I/O / UI rendering     │
+└──────────────────────────┘
+```
+
+### 执行顺序
+
+1. 执行同步代码
+2. 清空微任务队列
+3. 取一个宏任务执行
+4. 重复 2-3
+
+### 经典题目
+
+```js
+console.log('start')
+setTimeout(() => console.log('timeout'), 0)
+Promise.resolve().then(() => console.log('promise'))
+console.log('end')
+
+// 输出: start → end → promise → timeout
+```
+
+## 异步编程演进
+
+| 阶段       | 模式          | 问题                     |
+| ---------- | ------------- | ------------------------ |
+| 回调函数   | Callback      | 回调地狱、错误处理困难   |
+| Promise    | `.then()` 链  | 语义不够直观             |
+| Generator  | `yield` 暂停  | 需要执行器               |
+| async/await| 同步写法      | 当前主流方案             |
+
+### async/await 本质
+
+`async` 函数返回 Promise，`await` 暂停执行等待 Promise resolve，是 Generator + 自动执行器的语法糖。
+
+## 深拷贝与浅拷贝
+
+| 方式                     | 深度   | 限制                           |
+| ------------------------ | ------ | ------------------------------ |
+| 展开运算符 / `Object.assign` | 浅  | 只拷贝第一层                   |
+| `JSON.parse(JSON.stringify())` | 深 | 忽略函数/undefined/Symbol/循环引用 |
+| `structuredClone`        | 深     | 不支持函数/Symbol/DOM 节点     |
+| 递归实现                 | 深     | 需处理循环引用和特殊对象       |
+
+### 手写深拷贝要点
+
+- 处理循环引用（WeakMap 记录已拷贝对象）
+- 处理特殊对象（Date / RegExp / Map / Set）
+- 处理函数（直接引用或跳过）

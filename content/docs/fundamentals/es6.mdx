@@ -1,4 +1,168 @@
 ---
-title: ES6
-description: 从执行模型、对象系统到类型建模，覆盖最常见的深入追问。
+title: ES6+
+description: 现代 JavaScript 语法与核心特性。核心能力：变量声明、解构、箭头函数、Promise、模块化、迭代器与生成器。
+icon: Zap
 ---
+
+<Callout type="info">
+ES6+ 题常围绕"为什么这样设计"展开。比如 let 的暂时性死区不是 bug，而是语义约束；Promise 的微优先级也不是巧合，而是为了减少延迟。
+</Callout>
+
+## let / const / var
+
+| 特性       | `var`           | `let`         | `const`       |
+| ---------- | --------------- | ------------- | ------------- |
+| 作用域     | 函数作用域      | 块级作用域    | 块级作用域    |
+| 变量提升   | 声明+初始化提升 | 声明提升（TDZ）| 声明提升（TDZ）|
+| 重复声明   | 允许            | 不允许        | 不允许        |
+| 重新赋值   | 允许            | 允许          | 不允许        |
+
+### 暂时性死区（TDZ）
+
+从块级作用域开始到 `let`/`const` 声明语句之间的区域，访问变量会抛出 `ReferenceError`。
+
+```js
+console.log(a) // ReferenceError
+let a = 1
+```
+
+## 箭头函数
+
+### 与普通函数的区别
+
+| 特性           | 普通函数   | 箭头函数     |
+| -------------- | ---------- | ------------ |
+| `this` 指向    | 调用时决定 | 定义时继承外层 |
+| `arguments`    | 有         | 无           |
+| `constructor`  | 可作为构造函数 | 不可      |
+| `prototype`    | 有         | 无           |
+| `yield`        | 可作为生成器 | 不可        |
+
+## 解构赋值
+
+```js
+// 数组
+const [a, b, ...rest] = [1, 2, 3, 4]
+
+// 对象
+const { name, age = 18 } = { name: 'Tom' }
+
+// 嵌套
+const { data: { list } } = response
+
+// 重命名 + 默认值
+const { name: userName = 'anonymous' } = obj
+```
+
+## 模板字符串
+
+- 支持多行
+- 支持嵌入表达式：`` `Hello ${name}` ``
+- 支持标签模板：`` tag`Hello ${name}` ``
+
+## 扩展运算符 `...`
+
+| 场景     | 示例                              |
+| -------- | --------------------------------- |
+| 浅拷贝   | `{ ...obj }` / `[...arr]`        |
+| 合并     | `{ ...a, ...b }` / `[...a, ...b]`|
+| 函数参数 | `fn(...args)` / `function f(...args) {}` |
+
+## Symbol
+
+- 第七种基本类型，每次调用 `Symbol()` 返回唯一值
+- `Symbol('desc')` 的 `desc` 仅是描述，不影响唯一性
+- 用作对象属性键，不会被 `for...in` / `Object.keys()` 枚举
+- `Symbol.for('key')` 返回全局注册表中同一 key 的同一 Symbol
+
+## Map / Set / WeakMap / WeakSet
+
+| 类型       | 键类型     | 可遍历 | 弱引用 | 典型用途           |
+| ---------- | ---------- | ------ | ------ | ------------------ |
+| `Map`      | 任意       | 是     | 否     | 键值对集合         |
+| `Set`      | —          | 是     | 否     | 去重、成员检测     |
+| `WeakMap`  | 仅对象     | 否     | 是     | 关联私有数据       |
+| `WeakSet`  | 仅对象     | 否     | 是     | 标记已处理对象     |
+
+## Promise
+
+### 三种状态
+
+```
+pending → fulfilled（resolved）
+pending → rejected
+```
+
+状态一旦变更不可逆。
+
+### 核心方法
+
+| 方法              | 用途                                |
+| ----------------- | ----------------------------------- |
+| `Promise.all`     | 全部成功才成功，一个失败即失败      |
+| `Promise.allSettled` | 等全部完成，不关心成功/失败      |
+| `Promise.race`    | 取第一个完成的（无论成功/失败）     |
+| `Promise.any`     | 取第一个成功的，全部失败才失败      |
+
+### 链式调用
+
+```js
+fetch(url)
+  .then(res => res.json())
+  .then(data => process(data))
+  .catch(err => console.error(err))
+  .finally(() => cleanup())
+```
+
+## Proxy / Reflect
+
+```js
+const handler = {
+  get(target, key) {
+    console.log(`读取 ${String(key)}`)
+    return Reflect.get(target, key)
+  },
+  set(target, key, value) {
+    console.log(`设置 ${String(key)} = ${value}`)
+    return Reflect.set(target, key, value) // 返回 boolean
+  }
+}
+
+const proxy = new Proxy(obj, handler)
+```
+
+- `Proxy` 拦截 13 种操作（`get`/`set`/`has`/`deleteProperty`/`ownKeys` 等）
+- `Reflect` 与 `Proxy` 一一对应，提供默认行为的函数式调用
+
+## 迭代器与生成器
+
+### Iterator
+
+对象实现 `[Symbol.iterator]()` 方法，返回 `{ next() }` 接口。
+
+### Generator
+
+```js
+function* idMaker() {
+  let id = 0
+  while (true) yield id++
+}
+const gen = idMaker()
+gen.next() // { value: 0, done: false }
+```
+
+- `yield` 暂停执行，`next()` 恢复
+- 可用于惰性求值、异步流程控制
+
+## 模块化
+
+| 规范      | 语法                        | 加载方式   |
+| --------- | --------------------------- | ---------- |
+| CommonJS  | `require` / `module.exports`| 同步       |
+| ES Module | `import` / `export`         | 异步/静态  |
+
+### 核心差异
+
+- ESM 是编译时静态分析，支持 Tree Shaking；CJS 是运行时加载
+- ESM `import` 是只读绑定（live binding）；CJS `require` 是值拷贝
+- ESM `this` 为 `undefined`；CJS `this` 为 `module.exports`
