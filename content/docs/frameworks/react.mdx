@@ -1,25 +1,689 @@
 ---
 title: React 专题
-description: 从 Fiber、Hooks 到渲染优化，整理 React 高频追问。
+description: 从 Fiber 架构、Hooks 机制到并发渲染，整理 React 高频追问。
+icon: Atom
 featuredOnHome: true
 homeLabel: 框架专题
-updatedAt: 2026-04-22
+updatedAt: 2026-05-23
 ---
+
+<Callout type="info">
+React 专题题考的不是 API 记忆，而是你是否理解这套框架如何调度更新、处理副作用和维护 UI 一致性。先讲架构原理，再讲 Hooks 机制，最后落到项目实践。
+</Callout>
 
 ## 高频主线
 
-- Fiber 解决了什么问题
-- `useEffect`、`useLayoutEffect` 的差异
-- 状态批处理和更新调度如何理解
+- Fiber 解决了什么问题，Reconciliation 如何工作
+- `useEffect` 与 `useLayoutEffect` 的差异和执行时机
+- 状态批处理和更新调度的优先级机制
 - 如何判断一个组件需要优化，优化顺序是什么
 
 ## 回答建议
 
-1. 先说 React 如何安排更新。
-2. 再解释 Hooks 的运行约束。
+1. 先说 React 如何安排一次更新（调度 → 协调 → 提交）。
+2. 再解释 Hooks 的运行约束（调用顺序、闭包陷阱）。
 3. 最后补充项目里遇到的性能瓶颈与排查方式。
+
+## Fiber 架构
+
+### 为什么需要 Fiber
+
+React 15 的 Stack Reconciler 是**递归同步**的——一旦开始 diff 就不会停下来，长任务直接阻塞主线程，动画掉帧、输入卡顿。
+
+Fiber 的核心目标是**可中断、可恢复、可排优先级**的协调过程。
+
+### Fiber 节点结构
+
+```ts
+interface Fiber {
+  // 静态结构
+  tag: WorkTag              // 函数组件 / 类组件 / 原生元素 ...
+  type: any                 // 函数 / 类 / 标签名
+  key: string | null
+
+  // 树结构（链表代替递归栈）
+  return: Fiber | null      // 父节点
+  child: Fiber | null       // 第一个子节点
+  sibling: Fiber | null     // 下一个兄弟节点
+
+  // 工作状态
+  alternate: Fiber | null  // 双缓冲：当前帧 ↔ 工作帧
+  pendingProps: any
+  memoizedProps: any
+  memoizedState: any        // Hooks 链表头（函数组件）
+
+  // 副作用
+  flags: SideEffectFlags    // Placement / Update / Deletion ...
+  subtreeFlags: number      // 子树副作用汇总（快速跳过无变化子树）
+  updateQueue: UpdateQueue | null
+}
+```
+
+### 双缓冲机制（Double Buffering）
+
+```
+current 树  ← 屏幕上正在显示的
+    ↕  alternate
+workInProgress 树  ← 正在构建的下一帧
+```
+
+- 每次 setState 触发更新，React 从 current 复制出 workInProgress
+- 在 workInProgress 上完成协调和 diff
+- 完成后一次性交换指针：`current = workInProgress`
+- 用户看到的是**完整的新帧**，不会出现中间态
+
+### 协调流程（Reconciliation）
+
+<Steps>
+
+### 调度阶段（Scheduler）
+
+`setState` / `dispatch` 创建 Update 对象，Scheduler 根据优先级排队
+
+### 协调阶段（Reconciler）— 可中断
+
+`workLoop` 循环处理每个 Fiber 节点：
+- `beginWork`：自顶向下，创建/复用子 Fiber
+- `completeWork`：自底向上，标记副作用 flags
+- `shouldYield`：检查是否要让出主线程（高优任务到来或时间片耗尽）
+
+### 提交阶段（Commit）— 不可中断
+
+- Before Mutation：读取 DOM 快照
+- Mutation：执行 DOM 操作（插入/更新/删除）
+- Layout：执行 `useLayoutEffect` / `ref` 回调
+
+### 浏览器绘制
+
+绘制完成后，异步执行 `useEffect` 回调
+
+</Steps>
+
+### 优先级与调度
+
+| 优先级             | 来源                       | 说明                     |
+| ------------------ | -------------------------- | ------------------------ |
+| Immediate          | `flushSync`                | 同步执行，不可中断       |
+| UserBlocking       | 点击、输入                 | 16ms 内完成              |
+| Normal             | `useState` / `useReducer`  | 默认优先级               |
+| Low                | `useTransition`            | 可被高优打断             |
+| Idle               | `requestIdleCallback`      | 空闲时执行               |
+
+<Callout>
+高优先级更新可以**打断**低优先级更新。被打断的低优先级工作会被丢弃或重新开始，避免用户看到过期状态（"饥饿"问题通过不断重试低优来解决）。
+</Callout>
+
+## 渲染与提交
+
+### 三个阶段
+
+| 阶段               | 可中断 | 可访问 DOM | 执行内容                     |
+| ------------------ | ------ | ---------- | ---------------------------- |
+| Render（协调）     | 是     | 否         | 构建 Fiber 树、计算 diff     |
+| Pre-commit         | 否     | 是（只读） | 读取 DOM 快照               |
+| Commit             | 否     | 是         | 执行 DOM 操作、执行 Layout 副作用 |
+
+### 触发渲染的原因
+
+- `setState` / `useReducer` dispatch
+- `forceUpdate`（类组件）
+- 父组件重新渲染（子组件默认跟随）
+- Context 值变更会触发所有消费者渲染
+- `useRef` 变更**不会**触发渲染
+
+### Diff 算法
+
+React 的协调基于三条假设（官方称"启发式"）：
+
+1. **跨层级移动极少** → 同层比较，不跨层
+2. **不同类型 = 不同树** → 直接卸载重建
+3. **Key 标识同一性** → 同类型 + 同 Key = 可复用
+
+<Tabs items={['React Diff', 'Vue 3 LIS 对比']}>
+
+```
+旧: [A, B, C, D]
+新: [A, C, D, B]  (B 移到末尾)
+
+React 的做法:
+1. 从左到右逐个对比
+2. A 匹配 → 复用
+3. B ≠ C → 标记 B 删除，C 新建
+4. 之后逐个处理剩余差异
+5. 最后插入 B
+
+结果: 删除 B + 新建 C + 新建 D + 新建 B
+```
+
+```
+旧: [A, B, C, D, E]
+新: [A, C, D, B, E]
+
+Vue 3 的 LIS 算法:
+1. 最长递增子序列: [A, C, D, E]
+2. C、D 不动（在 LIS 中）
+3. 只需移动 B 到末尾
+
+结果: 移动 B（1 次 DOM 操作）
+```
+
+</Tabs>
+
+<Callout>
+React 的列表 diff 不是最优算法，O(n) 而非最小移动数。Key 的核心作用是让 React 识别节点身份，避免"就地复用"导致的状态错乱。
+</Callout>
+
+## Hooks 机制
+
+### 调用规则
+
+1. **只在顶层调用**——不在循环、条件、嵌套函数中使用
+2. **只在 React 函数中调用**——函数组件或自定义 Hook
+
+<Callout type="warn">
+为什么有这些规则？Hooks 存储在 Fiber 的 `memoizedState` 链表上，React 按**调用顺序**匹配。条件分支导致顺序不一致，后面的 Hook 会对错节点。
+</Callout>
+
+### Hooks 链表
+
+```ts
+// 每个 Hook 是链表节点
+interface Hook {
+  memoizedState: any    // 当前值
+  queue: UpdateQueue    // 待更新队列（useState）
+  next: Hook | null     // 下一个 Hook
+}
+
+// Fiber.memoizedState → Hook1 → Hook2 → Hook3 → null
+```
+
+### useState / useReducer
+
+```ts
+// useState 本质是 useReducer 的语法糖
+const [state, dispatch] = useReducer(basicStateReducer, initialState)
+```
+
+**更新机制**：
+
+```
+dispatch(action)
+  ↓
+创建 Update 对象，加入 Hook.queue 环形链表
+  ↓
+调度渲染（scheduleUpdateOnFiber）
+  ↓
+下次渲染时，从 queue 中取出所有 update，逐个 reduce
+  ↓
+得到新 memoizedState
+```
+
+**批处理**：
+
+<Tabs items={['React 18 自动批处理', '退出批处理']}>
+
+```ts
+// 事件回调、Promise、setTimeout 等全部批处理
+function handleClick() {
+  setA(1)   // 不会立即渲染
+  setB(2)   // 合并一次渲染
+}
+
+// Promise 中同样批处理
+fetch('/api').then(() => {
+  setA(1)
+  setB(2)  // 仍然只渲染一次
+})
+```
+
+```ts
+// flushSync：同步渲染，立即提交
+// 慎用！会退出批处理，阻塞后续更新
+flushSync(() => {
+  setC(3)  // 同步渲染
+})
+setD(4)    // 在 flushSync 完成后才处理
+```
+
+</Tabs>
+
+### useEffect vs useLayoutEffect vs useInsertionEffect
+
+| 维度             | `useEffect`            | `useLayoutEffect`       | `useInsertionEffect`    |
+| ---------------- | ---------------------- | ----------------------- | ----------------------- |
+| 执行时机         | 浏览器绘制之后          | DOM 更新后、绘制之前     | DOM 变更前              |
+| 是否阻塞绘制     | 否                      | 是                      | 是                      |
+| 适用场景         | 数据请求、事件绑定      | 读取 DOM 布局、同步修改 | CSS-in-JS 注入样式      |
+| SSR 行为         | 正常                    | 报 warning              | 正常                    |
+
+```
+Commit 阶段详细顺序:
+├── Before Mutation
+│   └── useInsertionEffect 回调
+├── Mutation
+│   └── 执行 DOM 操作（插入/更新/删除）
+└── Layout
+    ├── useLayoutEffect 回调
+    ├── ref 回调
+    └── ↓ 浏览器绘制后
+        └── useEffect 回调（异步调度）
+```
+
+<Callout>
+`useLayoutEffect` 中的 DOM 修改会在浏览器绘制前生效，用户看不到闪烁。`useEffect` 中的修改会触发额外一次重绘。优先用 `useEffect`，只在需要同步读取/修改 DOM 时用 `useLayoutEffect`。
+</Callout>
+
+### useEffect 闭包陷阱
+
+<Tabs items={['问题', '解决方案']}>
+
+```ts
+function Counter() {
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      // 闭包捕获的是创建时的 count，永远是 0
+      console.log(count)        // 0, 0, 0...
+      setCount(count + 1)       // 始终变成 1
+    }, 1000)
+    return () => clearInterval(id)
+  }, []) // 空依赖 → 闭包中的 count 永远是初始值
+}
+```
+
+```ts
+// 方案 1：函数式更新（推荐）
+setCount(c => c + 1)  // c 是最新值
+
+// 方案 2：useRef 持有最新值
+const countRef = useRef(count)
+countRef.current = count
+// 在回调中使用 countRef.current
+
+// 方案 3：将 count 加入依赖（每次重建定时器）
+useEffect(() => {
+  const id = setInterval(() => {
+    console.log(count) // 正确
+  }, 1000)
+  return () => clearInterval(id)
+}, [count])
+```
+
+</Tabs>
+
+### useRef
+
+```ts
+// useRef 返回 { current: initialValue }
+// 修改 .current 不触发渲染
+// 在整个生命周期中保持引用稳定
+
+// 典型用途
+const inputRef = useRef<HTMLInputElement>(null)  // DOM 引用
+const prevValueRef = useRef(props.value)          // 上一次的值
+const timerRef = useRef<number>()                 // 存储 ID
+```
+
+### useMemo / useCallback
+
+<Tabs items={['用法', '本质关系']}>
+
+```ts
+// useMemo: 缓存计算结果
+const sortedList = useMemo(
+  () => list.sort(compareFn),
+  [list, compareFn]
+)
+
+// useCallback: 缓存函数引用
+const handleSubmit = useCallback(
+  (e) => { /* ... */ },
+  [deps]
+)
+```
+
+```ts
+// useCallback 本质是 useMemo 的语法糖
+useCallback(fn, deps)
+// 等价于
+useMemo(() => fn, deps)
+
+// 两者的目的都是避免子组件不必要渲染
+// 本身不减少计算开销
+// 需配合 React.memo 才有效
+```
+
+</Tabs>
+
+### useContext
+
+```tsx
+const ThemeContext = createContext<'light' | 'dark'>('light')
+
+function App() {
+  return (
+    <ThemeContext.Provider value="dark">
+      <Page />
+    </ThemeContext.Provider>
+  )
+}
+
+function Button() {
+  const theme = useContext(ThemeContext) // "dark"
+}
+```
+
+<Callout type="warn">
+Context 值变化时，**所有消费者都会重新渲染**，无法跳过中间组件。解决方案：拆分 Context、用 `React.memo` 包裹消费者、或换用 Zustand/Jotai 等按需订阅的状态库。
+</Callout>
+
+### 自定义 Hook
+
+```ts
+// 命名：use 前缀
+function useWindowSize() {
+  const [size, setSize] = useState({ width: 0, height: 0 })
+
+  useEffect(() => {
+    const handler = () => setSize({ width: innerWidth, height: innerHeight })
+    handler()
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+
+  return size
+}
+```
+
+## 并发特性（React 18+）
+
+### useTransition
+
+```ts
+const [isPending, startTransition] = useTransition()
+
+function handleSearch(input: string) {
+  // 紧急更新：输入框立即响应
+  setSearchInput(input)
+
+  // 非紧急更新：搜索结果可以延迟
+  startTransition(() => {
+    setSearchQuery(input) // 可被点击/输入等高优更新打断
+  })
+}
+```
+
+### useDeferredValue
+
+```ts
+const [search, setSearch] = useState('')
+const deferredSearch = useDeferredValue(search)
+
+// deferredSearch 是 search 的延迟版本
+// 当有更高优先级更新时，deferredSearch 保持旧值
+// 空闲时自动更新为新值
+```
+
+### Suspense 与流式 SSR
+
+```tsx
+<Suspense fallback={<Spinner />}>
+  <AsyncData /> {/* 内部 throw Promise 触发 Suspense */}
+</Suspense>
+```
+
+```
+SSR 流式渲染流程:
+├── 服务端发送 HTML 骨架
+├── 遇到 Suspense 边界 → 先发送 fallback
+├── 异步数据就绪 → 流式发送真实内容（替换 fallback）
+└── 客户端 Hydration 同样按 Suspense 边界渐进
+```
+
+## Server Components（RSC）
+
+### Server vs Client Components
+
+| 维度           | Server Components           | Client Components            |
+| -------------- | --------------------------- | ---------------------------- |
+| 运行环境       | 仅服务端                    | 客户端（也可在服务端 SSR）   |
+| bundle 包含    | 不包含                      | 包含                         |
+| 交互性         | 无（无 useState/useEffect） | 有                           |
+| 数据获取       | 直接 async/await           | useEffect / SWR / React Query|
+| API 调用       | 可直连数据库                | 需走 API 层                 |
+| 体积影响       | 零（不会发送到客户端）      | 正常计入 bundle             |
+
+<Tabs items={['Server Component', 'Client Component']}>
+
+```tsx
+// Server Component（默认，无需声明）
+// 可直接 async/await 获取数据
+// 可直连数据库，零客户端体积
+async function ProductPage({ id }: { id: string }) {
+  const product = await db.query(
+    'SELECT * FROM products WHERE id = ?',
+    [id]
+  )
+  return <ProductDetail product={product} />
+}
+```
+
+```tsx
+// Client Component（显式声明 'use client'）
+// 可使用全部 Hooks 和事件处理
+'use client'
+function AddToCart({ productId }: { productId: string }) {
+  const [loading, setLoading] = useState(false)
+
+  async function handleAdd() {
+    setLoading(true)
+    await api.addToCart(productId)
+    setLoading(false)
+  }
+
+  return <button onClick={handleAdd}>加入购物车</button>
+}
+```
+
+</Tabs>
+
+### RSC 数据流规则
+
+```
+Server Component
+  ├── 可直接 async/await 获取数据
+  ├── 可导入其他 Server Component
+  ├── 可将 Client Component 作为子组件渲染
+  └── 不可使用 useState / useEffect / 事件处理
+
+Client Component
+  ├── 可使用全部 Hooks
+  ├── 可处理用户交互
+  ├── 不可导入 Server Component
+  │   （可接收 Server Component 作为 children / props）
+  └── 数据通过 props / Client Hook 获取
+```
+
+<Callout>
+Server Component 传 Client Component 的正确方式：通过 `children` prop。不要在 Client Component 内 `import` Server Component。
+</Callout>
+
+## 性能优化
+
+### 优化优先级（从高到低）
+
+1. **减少不必要的渲染** — 找到重渲染的组件，修正数据流
+2. **减少计算量** — 拆分重计算到 useMemo
+3. **减少 DOM 操作** — 虚拟化长列表
+4. **减少 bundle 体积** — 代码分割 + lazy loading
+
+### React.memo
+
+<Tabs items={['基本用法', '自定义比较']}>
+
+```tsx
+const ExpensiveList = React.memo(
+  function List({ items, onClick }: Props) {
+    return items.map(item => (
+      <li key={item.id} onClick={() => onClick(item.id)}>
+        {item.name}
+      </li>
+    ))
+  }
+)
+```
+
+```tsx
+// 自定义浅比较（慎用，容易遗漏）
+const List = React.memo(
+  function List(props) { /* ... */ },
+  (prev, next) => {
+    return prev.items === next.items
+      && prev.onClick === next.onClick
+  }
+)
+```
+
+</Tabs>
+
+### 优化手段对比
+
+| 手段             | 目标             | 开销           | 适用场景                 |
+| ---------------- | ---------------- | -------------- | ------------------------ |
+| `React.memo`     | 避免子组件渲染   | 浅比较 props   | props 变化少的展示组件   |
+| `useMemo`        | 缓存计算结果     | 依赖比较       | 昂贵的派生计算           |
+| `useCallback`    | 缓存函数引用     | 依赖比较       | 传给 memo 子组件的回调   |
+| `useRef`         | 持有可变引用     | 几乎无         | 不触发渲染的值           |
+| 代码分割         | 减小首屏 bundle  | 额外网络请求   | 路由级 / 大组件          |
+| 虚拟列表         | 减少 DOM 节点    | 计算可见区域   | 超长列表                 |
+
+<Callout type="warn">
+不要过度优化。先确认组件确实存在性能问题（React DevTools Profiler），再针对性优化。过早加 memo/useMemo 反而增加依赖比较开销。
+</Callout>
+
+### 代码分割
+
+```tsx
+// React.lazy + Suspense
+const HeavyChart = React.lazy(() => import('./HeavyChart'))
+
+function Dashboard() {
+  return (
+    <Suspense fallback={<Skeleton />}>
+      <HeavyChart />
+    </Suspense>
+  )
+}
+```
+
+### 列表虚拟化
+
+```tsx
+import { FixedSizeList } from 'react-window'
+
+function BigList({ items }) {
+  return (
+    <FixedSizeList height={600} itemCount={items.length} itemSize={50}>
+      {({ index, style }) => (
+        <div style={style}>{items[index].name}</div>
+      )}
+    </FixedSizeList>
+  )
+}
+```
+
+## 状态管理方案
+
+### 方案对比
+
+| 方案             | 定位             | 适用规模 | TS 支持 | 学习成本 |
+| ---------------- | ---------------- | -------- | ------- | -------- |
+| `useState`       | 组件内状态       | —        | 原生    | 低       |
+| `useReducer`     | 复杂组件内状态   | —        | 原生    | 中       |
+| `useContext`      | 跨组件共享       | 小       | 原生    | 低       |
+| Zustand          | 轻量全局状态     | 中       | 原生    | 低       |
+| Jotai            | 原子化状态       | 中       | 原生    | 低       |
+| Redux Toolkit    | 企业级状态       | 大       | 良好    | 高       |
+| React Query      | 服务端状态缓存   | 任意     | 原生    | 中       |
+
+### 何时引入全局状态库
+
+```
+组件内状态 → useState/useReducer
+├── 跨层级但范围小 → useContext + useReducer
+│   └── 问题：Context 值变 → 所有消费者重渲染
+├── 多组件频繁共享 → Zustand / Jotai
+│   └── 优势：按订阅粒度更新，不重渲染无关组件
+└── 大型应用 + 时间旅行 → Redux Toolkit
+    └── 配合 RTK Query 可统一服务端状态
+```
+
+<Callout>
+服务端数据优先用 React Query / SWR / RTK Query，不要放入全局状态库。它们自带缓存、去重、失效、乐观更新。
+</Callout>
+
+## 错误边界
+
+```tsx
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallback?: React.ReactNode },
+  { hasError: boolean; error?: Error }
+> {
+  state = { hasError: false, error: undefined }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error }
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    logErrorToService(error, info.componentStack)
+  }
+
+  render() {
+    if (this.state.hasError) return this.props.fallback ?? <h1>出错了</h1>
+    return this.props.children
+  }
+}
+
+// 使用
+<ErrorBoundary fallback={<ErrorPage />}>
+  <App />
+</ErrorBoundary>
+```
+
+<Callout>
+错误边界必须是**类组件**（`getDerivedStateFromError` / `componentDidCatch`）。Hooks 目前无等价 API。它只捕获子组件**渲染期间**抛出的错误，不捕获事件处理、异步代码、SSR 中的错误。
+</Callout>
+
+## React 设计模式
+
+| 模式         | React 应用                          | 重要程度 |
+| ------------ | ----------------------------------- | -------- |
+| 观察者模式   | 状态订阅、Hooks 依赖追踪            | 核心     |
+| 代理模式     | Fiber 节点代理真实 DOM              | 核心     |
+| 策略模式     | 不同 WorkTag 的 beginWork 处理      | 核心     |
+| 组合模式     | `children` / Compound Components    | 核心     |
+| 中介者模式   | 事件委托（SyntheticEvent）          | 重要     |
+| 工厂模式     | `createElement` / `jsx`            | 重要     |
+| 单例模式     | 全局状态 Store                      | 一般     |
+| 装饰器模式   | HOC（高阶组件）                     | 一般     |
 
 ## 常见误区
 
-- 把记忆优化手段当成性能优化本身
-- 没有区分渲染次数、计算开销和提交阶段的成本
+| 误区                                         | 正解                                           |
+| -------------------------------------------- | ---------------------------------------------- |
+| `useMemo` 能提升所有性能                     | 依赖比较本身有开销，简单计算不需要              |
+| `useCallback` 能防止子组件重渲染             | 需配合 `React.memo` 才有效                     |
+| `useEffect` = `componentDidMount`           | `useEffect` 在绘制后执行，且依赖变化时重新执行   |
+| 多个 `useState` 一定触发多次渲染             | React 18 自动批处理，事件回调内只渲染一次       |
+| Context 能替代所有状态管理                   | Context 无按需更新，消费者全量重渲染            |
+| RSC 能完全替代 SSR                           | RSC 是组件级流式，SSR 是页面级，场景不同        |
+| `flushSync` 是优化手段                       | 它是退出批处理的逃生舱，慎用，会同步阻塞渲染    |
+
+## 项目题结合点
+
+- 长列表 + 搜索场景如何避免输入卡顿（`useDeferredValue` + 虚拟列表）
+- 复杂表单如何拆分状态（组件内 `useReducer` + Context 分层）
+- 大型应用如何做代码分割（路由级 `lazy` + 按需加载状态库）
+- 如何排查不必要的重渲染（React DevTools Profiler + `why-did-you-render`）
