@@ -1,0 +1,255 @@
+---
+title: 前端工程化
+description: 从开发规范、构建流程到质量保障，整理工程化面试的完整回答路径。
+icon: Omega
+featuredOnHome: true
+homeLabel: 工程化
+updatedAt: 2026-05-23
+---
+
+<Callout type="info">
+工程化题考的不是工具链罗列，而是理解为什么需要自动化、规范解决什么问题、工具链如何协同保证交付质量。先讲痛点，再讲方案，最后讲权衡。
+</Callout>
+
+## 高频主线
+
+- 前端工程化如何从手工时代演进到零配置时代
+- 构建工具的核心差异和选型依据
+- HMR 原理如何影响开发体验
+- 代码质量防线如何从编辑器到 CI 层层递进
+- 多环境配置如何不失控
+
+## 工程化演进 — 从手工到自动化
+
+| 阶段 | 时代 | 代表工具 | 解决的问题 | 遗留问题 |
+| ---- | ---- | -------- | ---------- | -------- |
+| 1 | 手工时代 | 无 | — | 全局变量污染、手动管理依赖 |
+| 2 | 任务自动化 | Grunt / Gulp | 重复任务自动化（压缩、合并、lint） | 没有模块系统，依赖手动管理 |
+| 3 | 模块打包 | Webpack / Rollup | 模块化 + 按需加载 + Tree Shaking | 配置复杂，开发启动慢 |
+| 4 | 零配置时代 | Vite / esbuild | 开发极速启动 + 开箱即用 | 生态迁移成本、插件兼容性 |
+
+```
+手工 (2005) → Grunt/Gulp (2012) → Webpack (2015) → Vite (2020)
+手动管理   → 任务自动化       → 模块打包         → 零配置 + 原生 ESM
+```
+
+<Callout>
+工程化演进的核心驱动力是**开发效率和交付质量的矛盾**。每一代工具都解决了上一代的痛点，但也引入了新的复杂度。理解这个演进逻辑，才能在面试中说清"为什么选这个工具"。
+</Callout>
+
+## 构建工具对比 — 选型的核心维度
+
+| 维度 | Webpack | Vite | Rollup | esbuild |
+| ---- | ------- | ---- | ------ | ------- |
+| 开发启动 | 慢（全量打包） | 极快（原生 ESM，不打包） | — | — |
+| HMR | 增量编译（随项目变大变慢） | 即时（模块级热替换） | — | — |
+| 构建产物 | Chunk 分割灵活 | Rollup 输出 | Tree Shaking 优秀 | 极快但不优化 |
+| 配置复杂度 | 高（概念多、插件链长） | 低（开箱即用） | 中 | 极低 |
+| 适用场景 | 复杂应用、老项目 | 新项目首选 | 库和组件库 | 极速构建、转译 |
+
+### Vite 架构 — 开发与构建的双模式
+
+<Tabs items={['开发模式', '构建模式']}>
+
+```
+浏览器请求 → Vite Dev Server
+                ↓
+        拦截裸模块导入（如 'vue'）
+                ↓
+        按需编译单个模块（esbuild 预构建依赖）
+                ↓
+        返回原生 ESM → 浏览器直接执行
+
+关键：不打包，浏览器原生 ESM 按需加载
+     依赖预构建（esbuild）→ 首次启动后缓存
+     源码按需编译 → 只编译当前页面用到的模块
+```
+
+```
+Vite Build（生产构建）
+        ↓
+Rollup 打包 → Tree Shaking + 代码分割
+        ↓
+产物优化 → 压缩、CSS 提取、资源哈希
+        ↓
+输出静态资源（CDN 部署）
+
+关键：生产用 Rollup（Tree Shaking 更成熟）
+     开发用 esbuild（极快的按需编译）
+     两套引擎，一套配置
+```
+
+</Tabs>
+
+<Callout>
+Vite 开发用 esbuild（编译快但不做优化），生产用 Rollup（Tree Shaking 成熟、产物优化好）。开发体验和生产产物由不同引擎负责，这是 Vite "快"的秘密——开发时不打包，只在请求时按需编译。
+</Callout>
+
+## 开发体验优化 — DX 也是生产力
+
+### HMR — 模块热替换原理
+
+| 维度 | Webpack HMR | Vite HMR |
+| ---- | ----------- | -------- |
+| 检测变更 | 文件系统监听 | 文件系统监听 |
+| 处理方式 | 重新打包变更模块及其依赖 | 只重新编译变更模块 |
+| 生效范围 | Chunk 级（可能影响多个模块） | 模块级（精确到单文件） |
+| 速度 | 随项目变大变慢 | 始终快速（与项目规模无关） |
+
+```
+Webpack HMR 流程：
+文件变更 → 重新编译 Chunk → WebSocket 通知浏览器 → 下载更新模块 → 替换模块
+
+Vite HMR 流程：
+文件变更 → 只编译变更模块 → WebSocket 通知浏览器 → 请求更新模块 → 替换模块
+```
+
+<Callout>
+Vite HMR 速度与项目规模无关——因为它不需要重新打包，只编译变更的模块。Webpack HMR 需要重新编译整个 Chunk，项目越大越慢。
+</Callout>
+
+### Source Map — 定位源码的桥梁
+
+| 配置 | 构建速度 | 适用场景 |
+| ---- | -------- | -------- |
+| `none` | 最快 | 生产环境（不暴露源码） |
+| `eval` | 快 | 开发环境（快速重建） |
+| `eval-source-map` | 中 | 开发环境（完整 Source Map） |
+| `source-map` | 慢 | 生产环境调试（独立 .map 文件） |
+| `hidden-source-map` | 慢 | 生产环境（不暴露 Source Map 引用，需手动上传到监控平台） |
+
+<Callout>
+生产环境推荐 `hidden-source-map`——不暴露 Source Map 引用给用户，但将 .map 文件上传到错误监控平台（Sentry），线上报错时可反定位到源码。
+</Callout>
+
+## 代码质量保障 — 自动化防线
+
+### 四层防线 — 从编辑器到运行时
+
+| 防线 | 时机 | 工具 | 作用 |
+| ---- | ---- | ---- | ---- |
+| 编辑器 | 编码时 | ESLint + Prettier 插件 | 即时提示错误和格式问题 |
+| 提交门禁 | git commit 时 | husky + lint-staged | 只检查暂存区文件，阻止不规范代码入库 |
+| CI 流水线 | push / PR 时 | GitHub Actions / CI | 全量检查 + 测试 + 构建 |
+| 运行时监控 | 线上 | Sentry / 自建监控 | 捕获运行时错误，反馈到开发 |
+
+### 提交门禁配置
+
+```json
+// package.json
+{
+  "lint-staged": {
+    "*.{js,ts,vue}": ["eslint --fix", "prettier --write"],
+    "*.{css,scss,vue}": ["stylelint --fix"],
+    "*.{ts,vue}": ["vue-tsc --noEmit"]
+  }
+}
+```
+
+```bash
+# .husky/pre-commit
+npx lint-staged
+
+# .husky/commit-msg
+npx commitlint --edit $1
+```
+
+### 代码规范工具职责
+
+| 工具 | 职责 | 关注点 |
+| ---- | ---- | ------ |
+| ESLint | 代码质量 | 逻辑错误、最佳实践、复杂度 |
+| Prettier | 代码格式 | 缩进、换行、引号、分号 |
+| TypeScript | 类型安全 | 类型错误、接口契约 |
+| Stylelint | 样式规范 | CSS 属性顺序、选择器规范 |
+
+<Callout>
+ESLint 管逻辑，Prettier 管格式——职责不同，不要用 ESLint 的格式规则替代 Prettier。推荐 `eslint-config-prettier` 关闭 ESLint 中与 Prettier 冲突的规则。
+</Callout>
+
+## 环境与配置管理 — 多环境不失控
+
+### .env 文件策略
+
+| 文件 | 加载时机 | 用途 |
+| ---- | -------- | ---- |
+| `.env` | 所有环境 | 公共默认值 |
+| `.env.local` | 所有环境（不提交 Git） | 个人本地覆盖 |
+| `.env.development` | 开发环境 | 开发专属配置 |
+| `.env.production` | 生产环境 | 生产专属配置 |
+| `.env.staging` | 预发布环境 | 预发布专属配置 |
+
+### 环境变量注入规则
+
+```ts
+// Vite — 只有 VITE_ 前缀的变量暴露给客户端
+VITE_API_URL=https://api.example.com    // ✅ 暴露
+SECRET_KEY=xxx                           // ❌ 不暴露
+
+// 代码中访问
+const apiUrl = import.meta.env.VITE_API_URL
+
+// Webpack — 只有 REACT_APP_ / VUE_APP_ 前缀暴露
+const apiUrl = process.env.REACT_APP_API_URL
+```
+
+| 原则 | 说明 | 反例 |
+| ---- | ---- | ---- |
+| 前缀过滤 | 只有特定前缀的变量暴露给客户端 | 所有环境变量都打包进前端 |
+| 敏感信息不入库 | `.env.local` 加入 `.gitignore` | 密钥写进 `.env` 并提交 |
+| 配置分离 | 业务配置与构建配置分开 | 业务 API 地址写在 vite.config.ts |
+| 编译时替换 | 环境变量在构建时注入，不是运行时读取 | 前端代码 `process.env` 运行时读取 |
+
+<Callout>
+前端环境变量是**编译时替换**，不是运行时读取。`import.meta.env.VITE_API_URL` 在构建时被替换为字符串字面量。这意味着：构建后环境变量就固定了，切换环境必须重新构建。如果需要运行时切换配置，要用其他方案（如 `window.__CONFIG__` 注入）。
+</Callout>
+
+## 脚手架 — 项目初始化标准化
+
+| 脚手架 | 创建命令 | 特点 |
+| ------ | -------- | ---- |
+| create-vue | `npm create vue@latest` | Vue 官方，支持 TS / Router / Pinia / ESLint 选项 |
+| create-vite | `npm create vite@latest` | Vite 官方，多框架模板（Vue / React / Svelte） |
+| create-react-app | `npx create-react-app` | React 官方（已不推荐，建议用 Vite 模板） |
+| 自定义 CLI | 自建 | 统一团队模板、内嵌规范配置、一键创建 |
+
+### 脚手架解决什么问题
+
+| 问题 | 脚手架方案 |
+| ---- | ---------- |
+| 项目结构不统一 | 内置标准目录模板 |
+| 依赖版本不一致 | 锁定核心依赖版本 |
+| 规范配置遗漏 | 预装 ESLint / Prettier / husky / TS 配置 |
+| 新项目搭建慢 | 一键创建，开箱即用 |
+
+<Callout>
+脚手架的价值不是生成代码，而是**固化团队的最佳实践**——目录结构、依赖版本、规范配置一次性到位，避免每个项目重新踩坑。团队规模越大，脚手架的收益越高。
+</Callout>
+
+## 工程化体系总结 — 从工具到流程
+
+| 层级 | 关注点 | 关键工具/实践 |
+| ---- | ------ | ------------- |
+| 开发体验 | DX、HMR、类型提示 | Vite、TypeScript、ESLint 插件 |
+| 代码规范 | 格式、质量、类型 | Prettier、ESLint、TS、commitlint |
+| 提交门禁 | 阻止不规范代码入库 | husky + lint-staged |
+| 构建优化 | 产物体积、构建速度 | Tree Shaking、代码分割、增量构建 |
+| 环境管理 | 多环境配置隔离 | .env 策略、编译时替换 |
+| CI/CD | 自动化构建和部署 | GitHub Actions、Turborepo |
+| 运行时监控 | 线上错误捕获 | Sentry、Performance API |
+
+<Callout>
+工程化不是堆工具，而是**让每个环节都有自动化的保障**。工具选型的核心逻辑：能自动化的不手动、能在提交前发现的不留到 CI、能在 CI 发现的不留到线上。
+</Callout>
+
+## 常见误区
+
+| 误区 | 正解 |
+| ---- | ---- |
+| 工程化就是配置 Webpack | 工程化是从开发到交付的完整流程，Webpack 只是构建环节的工具 |
+| Vite 生产构建也用 esbuild | Vite 生产构建用 Rollup，esbuild 只用于开发时的按需编译和依赖预构建 |
+| ESLint 能替代 Prettier | ESLint 管逻辑质量，Prettier 管代码格式，职责不同，需配合使用 |
+| 环境变量是运行时读取 | 前端环境变量是编译时替换，构建后固定，切换环境需重新构建 |
+| Source Map 生产环境不能开 | 用 `hidden-source-map` + 上传监控平台，不暴露给用户但可反定位源码 |
+| lint-staged 检查全量代码 | lint-staged 只检查暂存区文件，速度远快于全量 lint |
+| 脚手架只是生成模板 | 脚手架的核心价值是固化团队最佳实践，统一规范和依赖版本 |

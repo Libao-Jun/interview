@@ -1,0 +1,287 @@
+---
+title: 前端模块化
+description: 从规范演进、打包机制到 Tree Shaking 实践，整理模块化面试的完整回答路径。
+icon: Package
+featuredOnHome: true
+homeLabel: 工程化
+updatedAt: 2026-05-23
+---
+
+<Callout type="info">
+模块化题考的不是规范背诵，而是理解模块系统如何影响打包产物和运行时行为。先讲规范的动机和局限，再讲打包器如何处理模块，最后落到 Tree Shaking 和包设计实践。
+</Callout>
+
+## 高频主线
+
+- 模块规范如何从全局污染演进到 ESM
+- ESM 与 CJS 的核心差异和工程影响
+- 打包器如何处理模块依赖并生成产物
+- Tree Shaking 的原理和实践条件
+- 如何设计一个可复用的 npm 包
+
+## 模块规范演进 — 从全局污染到 ESM
+
+| 阶段 | 规范 | 核心机制 | 解决的问题 | 遗留问题 |
+| ---- | ---- | -------- | ---------- | -------- |
+| 1 | IIFE | 函数作用域隔离 | 全局变量污染 | 依赖顺序需手动管理 |
+| 2 | CJS | `require` + `module.exports` | 模块复用 + 依赖声明 | 同步加载，浏览器不可用 |
+| 3 | AMD | `define` + `require`（异步） | 浏览器端异步加载 | 语法冗余，社区分裂 |
+| 4 | ESM | `import` + `export`（静态声明） | 静态分析 + Tree Shaking | 需打包器转译（兼容性） |
+
+```
+IIFE (2005)     → CJS (2009, Node)     → AMD (2011, RequireJS)  → ESM (2015, ES6)
+全局污染 → 服务端模块化      → 浏览器端异步加载     → 统一标准 + 静态分析
+```
+
+<Callout>
+IIFE 是前端最早的模块化手段（jQuery 时代的立即执行函数）。CJS 和 AMD 是社区分裂期的两个方案（服务端 vs 浏览器）。ESM 是语言级标准，统一了模块系统，并带来了 CJS 无法实现的能力：静态分析和 Tree Shaking。
+</Callout>
+
+## ESM vs CJS — 核心差异
+
+| 维度 | ESM | CJS |
+| ---- | --- | --- |
+| 加载方式 | 编译时静态分析 | 运行时动态加载 |
+| 导入语法 | `import { foo } from './mod'` | `const { foo } = require('./mod')` |
+| 导出绑定 | 引用绑定（live binding） | 值拷贝 |
+| `this` 顶层 | `undefined` | `module` 对象 |
+| 循环依赖 | 引用已声明但未初始化的变量 | 得到已执行部分的 `module.exports` |
+| Tree Shaking | 支持（静态分析可确定使用情况） | 不支持（动态 require 无法静态分析） |
+| 异步加载 | 原生支持 `import()` | 不支持（`require` 是同步的） |
+| 适用环境 | 浏览器 + Node（需 type: module） | Node 原生支持 |
+
+### 导出绑定差异 — 最容易踩的坑
+
+```js
+// CJS — 值拷贝，后续修改不影响已导入的值
+// counter.js
+let count = 0
+setTimeout(() => { count = 1 }, 100)
+module.exports = { count }
+
+// main.js
+const { count } = require('./counter')
+console.log(count) // 0（拷贝的是导出时的值）
+setTimeout(() => console.log(count), 200) // 仍然是 0
+```
+
+```js
+// ESM — 引用绑定，修改实时反映
+// counter.js
+export let count = 0
+setTimeout(() => { count = 1 }, 100)
+
+// main.js
+import { count } from './counter.js'
+console.log(count) // 0
+setTimeout(() => console.log(count), 200) // 1（引用绑定，实时更新）
+```
+
+<Callout>
+CJS 导出的是值的拷贝，ESM 导出的是引用绑定。这是两者最本质的语义差异，也是 Tree Shaking 只能基于 ESM 的根本原因——静态分析需要确定模块间的精确依赖关系。
+</Callout>
+
+## 模块打包 — Bundle 的本质
+
+### 打包做了什么
+
+```
+入口文件 → 构建依赖图（Dependency Graph）→ 模块合并 → 产物输出
+              ↓                              ↓
+         递归解析 import/require        按规则合并、去重、压缩
+```
+
+### 打包器对比
+
+| 维度 | Webpack | Vite（开发） | Vite（构建） | Rollup | esbuild |
+| ---- | ------- | ------------ | ------------ | ------ | ------- |
+| 开发启动 | 慢（全量打包） | 极快（原生 ESM，不打包） | — | — | — |
+| HMR | 增量编译 | 即时（模块级热替换） | — | — | — |
+| 构建产物 | Chunk 分割灵活 | Rollup 输出 | Tree Shaking 优秀 | 库打包首选 | 极快但不优化 |
+| 适用场景 | 复杂应用 | 新项目首选 | — | 库和组件库 | 极速构建 |
+
+<Callout>
+Vite 开发时不打包——浏览器原生 ESM 按需加载，所以启动极快。构建时用 Rollup 输出优化产物。Webpack 则开发构建都需要全量打包，项目越大启动越慢。
+</Callout>
+
+### Webpack 核心概念
+
+| 概念 | 作用 |
+| ---- | ---- |
+| Entry | 打包入口，构建依赖图的起点 |
+| Output | 产物输出路径和命名规则 |
+| Loader | 转换非 JS 文件（CSS、图片、TS → JS） |
+| Plugin | 扩展构建流程（压缩、环境变量、HTML 生成） |
+| Module | 一切文件都是模块（JS、CSS、图片） |
+| Chunk | 打包过程中的模块集合（入口 Chunk + 异步 Chunk） |
+| Bundle | 最终输出的产物文件 |
+
+## Tree Shaking — 消除死代码
+
+### 原理
+
+```
+ESM 静态 import → 构建依赖图 → 标记未使用的导出 → 产物中移除
+                    ↓
+            需要 ESM 格式 + 无副作用 + 静态可分析
+```
+
+### 实践条件
+
+| 条件 | 说明 | 反例 |
+| ---- | ---- | ---- |
+| 使用 ESM 格式 | `import/export` 可静态分析 | CJS 的 `require()` 是动态的 |
+| 标记副作用 | `package.json` 设置 `"sideEffects": false` | 未标记时打包器保守保留所有代码 |
+| 避免动态导入干扰 | 运行时条件导入无法静态分析 | `if (cond) import('./mod')` |
+| 避免全局副作用 | 模块顶层不要有 `window.xxx = ...` | 打包器无法安全移除 |
+
+### sideEffects 配置
+
+```json
+// package.json — 标记无副作用，允许 Tree Shaking
+{
+  "sideEffects": false
+}
+
+// 有副作用的文件需单独列出
+{
+  "sideEffects": ["*.css", "./src/polyfill.js"]
+}
+```
+
+<Tabs items={['有效 Tree Shaking', '无效 Tree Shaking']}>
+
+```ts
+// utils.ts — ESM 格式，静态导出
+export function add(a: number, b: number) { return a + b }
+export function multiply(a: number, b: number) { return a * b }
+
+// main.ts — 只导入 add
+import { add } from './utils'
+console.log(add(1, 2))
+
+// 产物中 multiply 被移除 ✓
+```
+
+```ts
+// utils.js — CJS 格式，动态导出
+module.exports = {
+  add: (a, b) => a + b,
+  multiply: (a, b) => a * b,
+}
+
+// main.js
+const { add } = require('./utils')
+
+// 产物中 multiply 仍然存在 ✗
+// CJS 的 require 是运行时执行，打包器无法确定哪些导出被使用
+```
+
+</Tabs>
+
+<Callout>
+Tree Shaking 的核心条件是**静态可分析**——打包器在编译时就能确定哪些代码不会被使用。ESM 的 `import/export` 是静态声明，CJS 的 `require` 是运行时调用。这就是为什么 `lodash`（CJS）不支持 Tree Shaking，而 `lodash-es`（ESM）支持。
+</Callout>
+
+## 模块解析 — 路径怎么找到
+
+### Node 解析算法
+
+```
+导入 'lodash-es'
+  ↓
+1. 是否是内置模块？否
+2. 是否是相对/绝对路径？否
+3. 当前目录 node_modules/lodash-es/ → 找到
+4. 读取 package.json 的 exports/main/module 字段
+5. 按条件匹配（import → ESM 入口，require → CJS 入口）
+```
+
+### package.json 入口字段优先级
+
+| 字段 | 优先级 | 说明 |
+| ---- | ------ | ---- |
+| `exports` | 最高 | 现代标准，精确控制子路径导出和条件 |
+| `module` | 中 | ESM 入口（社区约定，非标准） |
+| `main` | 低 | CJS 入口（传统标准） |
+
+```json
+// 现代 package.json 同时支持 ESM 和 CJS
+{
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  }
+}
+```
+
+### 路径别名配置
+
+```ts
+// vite.config.ts
+export default defineConfig({
+  resolve: {
+    alias: {
+      '@': '/src',
+      '@components': '/src/components',
+    }
+  }
+})
+
+// tsconfig.json 同步配置（TS 也能识别别名）
+{
+  "compilerOptions": {
+    "paths": { "@/*": ["./src/*"] }
+  }
+}
+```
+
+## 包设计 — 发布可复用模块
+
+### ESM/CJS 双格式发布
+
+| 格式 | 文件后缀 | 用途 |
+| ---- | -------- | ---- |
+| ESM | `.mjs` 或 `type: module` 时 `.js` | 现代打包器、浏览器 |
+| CJS | `.cjs` 或默认 `.js` | Node 直接 require、旧工具链 |
+
+### package.json 关键字段
+
+| 字段 | 用途 | 示例 |
+| ---- | ---- | ---- |
+| `name` | 包名，发布到 npm 的唯一标识 | `"@myorg/ui"` |
+| `version` | 语义化版本 | `"1.2.3"` |
+| `exports` | 精确控制导出路径和条件 | 见上方示例 |
+| `types` | TypeScript 类型文件路径 | `"./dist/index.d.ts"` |
+| `files` | 发布时包含的文件白名单 | `["dist"]` |
+| `sideEffects` | Tree Shaking 副作用标记 | `false` 或 `["*.css"]` |
+| `peerDependencies` | 宿主环境需提供的依赖 | `"vue": "^3.3"` |
+
+### 依赖类型选择
+
+| 类型 | 安装位置 | 适用场景 |
+| ---- | -------- | -------- |
+| `dependencies` | 用户安装 | 运行时必需（如工具函数库） |
+| `peerDependencies` | 用户自行安装 | 与宿主共享（如 Vue 组件库依赖 Vue） |
+| `devDependencies` | 不发布 | 构建/测试工具（Vite、Vitest） |
+
+<Callout>
+Vue/React 组件库的框架依赖必须放 `peerDependencies`——避免用户项目里安装两份 Vue/React。工具函数库（不依赖框架）放 `dependencies`。
+</Callout>
+
+## 常见误区
+
+| 误区 | 正解 |
+| ---- | ---- |
+| CJS 和 ESM 可以混用 | 打包器会尽力兼容，但混用可能导致 Tree Shaking 失效或运行时错误 |
+| `require` 可以 Tree Shaking | `require` 是运行时调用，无法静态分析，不支持 Tree Shaking |
+| `sideEffects: false` 随便设 | 必须确认模块真的没有副作用（如 CSS 文件、polyfill） |
+| 打包产物越小 Tree Shaking 越好 | 还要看运行时行为，有时保留少量冗余代码比引入复杂副作用管理更可取 |
+| `module` 字段是标准 | 它是社区约定，`exports` 才是 Node 官方标准 |
+| npm 包只能发 JS | 可以发 CSS、WASM、类型声明等，通过 `exports` 条件分发 |
+| 路径别名不需要 TS 配置 | Vite 配了别名但 TS 没配，编译通过但编辑器报错 |
