@@ -6,7 +6,12 @@
       "mcp__ide__getDiagnostics",
       "Bash(npx next *)",
       "Bash(node -e \"const f = require\\('fumadocs-ui'\\); console.log\\(Object.keys\\(f\\).filter\\(k => /step|callout|tab/i.test\\(k\\)\\)\\)\")",
-      "Bash(node -e \"const f = require\\('fumadocs-ui'\\); console.log\\(Object.keys\\(f\\).sort\\(\\).join\\('\\\\n'\\)\\)\")"
+      "Bash(node -e \"const f = require\\('fumadocs-ui'\\); console.log\\(Object.keys\\(f\\).sort\\(\\).join\\('\\\\n'\\)\\)\")",
+      "WebFetch(domain:cn.vuejs.org)",
+      "WebFetch(domain:github.com)",
+      "Bash(gh api *)",
+      "Bash(where gh *)",
+      "WebFetch(domain:zh-hans.react.dev)"
     ]
   }
 }

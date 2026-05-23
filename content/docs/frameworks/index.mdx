@@ -1,12 +1,93 @@
 ---
 title: 框架专题导读
-description: 用“渲染模型 + 状态流 + 性能”组织 Vue 与 React 面试题。
+description: 用"渲染模型 + 状态流 + 性能"组织 Vue 与 React 面试题。
+icon: Layers
+featuredOnHome: true
+homeLabel: 框架专题
+updatedAt: 2026-05-23
 ---
 
-框架题不是 API 问答，而是考你是否理解这套框架如何管理更新、组件边界和状态。
+<Callout type="info">
+框架题不是 API 问答，而是考你是否理解这套框架如何管理更新、组件边界和状态。先讲机制原理，再讲源码实现，最后落到项目实践。
+</Callout>
 
-## 建议视角
+## 这一章的目标
 
-- 先看响应式或状态更新机制
-- 再看渲染过程与 diff 策略
-- 最后看性能优化和工程实践
+- 能说清响应式追踪或状态调度如何驱动渲染
+- 能对比 Vue Proxy 响应式 vs React Fiber 调度的根本差异
+- 能从编译优化、Diff 策略、组件边界推导性能方案
+
+## 推荐学习路径
+
+<Steps>
+
+### 响应式与状态更新机制
+
+Vue 3 Proxy 响应式（track/trigger）vs React Fiber 调度（lane 优先级 + 时间切片）
+
+### 渲染管线与 Diff 策略
+
+Vue 编译优化（PatchFlag + Block Tree + 静态提升）vs React 不可变 Reconciliation（双缓存 + Lane）
+
+### 组件边界与通信模式
+
+Composable / Hooks 设计、provide/inject vs Context、Pinia vs Zustand
+
+### 性能优化与工程实践
+
+v-memo / useMemo、shallowRef / React.memo、虚拟滚动、懒加载
+
+</Steps>
+
+## 高频主线
+
+| 维度           | Vue 3                              | React                          |
+| -------------- | ---------------------------------- | ------------------------------ |
+| 状态模型       | Proxy 响应式（自动追踪依赖）       | 不可变状态 + setState 调度     |
+| 更新粒度       | 组件级精确更新（编译标记）         | 组件级 + 子树协调              |
+| 编译优化       | 静态提升、PatchFlag、Block Tree    | 无编译优化，运行时 Reconcile   |
+| 组合逻辑       | Composable（`use` 前缀 + ref 返回） | Custom Hook（闭包 + 依赖数组） |
+| 状态管理       | Pinia（~1KB，原生 TS）             | Zustand / Jotai / Redux        |
+
+## 框架对比核心问题
+
+### 状态更新机制
+
+| 对比项 | Vue 3 | React |
+| ------ | ----- | ----- |
+| 核心模型 | Proxy 劫持 + track/trigger 自动收集依赖 | 不可变状态 + setState 调度 |
+| 更新触发 | 响应式数据变化自动触发 | 手动调用 setState / dispatch |
+| 更新粒度 | 组件级精确更新（编译标记辅助） | 组件级 + 子树协调 |
+| 批量更新 | 自动批量（nextTick 合并） | React 18 自动批量（原需 flushSync） |
+
+### 渲染与 Diff 策略
+
+| 对比项 | Vue 3 | React |
+| ------ | ----- | ----- |
+| 编译优化 | 静态提升、PatchFlag、Block Tree、事件缓存 | 无编译优化，运行时 Reconcile |
+| Diff 算法 | 同层对比 + LIS 最长递增子序列 | 同层对比 + Key 匹配 |
+| 虚拟 DOM | 编译期标记动态节点，跳过静态 | 全量递归对比子树 |
+| 调度能力 | 无优先级调度，同步更新 | Fiber + Lane 优先级 + 时间切片 |
+
+### 组合逻辑与状态管理
+
+| 对比项 | Vue 3 | React |
+| ------ | ----- | ----- |
+| 组合模式 | Composable（`use` 前缀 + `toValue` 输入 + ref 返回） | Custom Hook（闭包 + 依赖数组 + 规则约束） |
+| 副作用管理 | `effectScope` 批量清理 watch/computed | cleanup 函数手动返回 |
+| 全局状态 | Pinia（~1KB，原生 TS，无需 Mutation） | Zustand / Jotai / Redux |
+| 跨级通信 | provide/inject + Pinia | Context + 第三方状态库 |
+
+### 新特性与进阶
+
+| 对比项 | Vue 3 | React |
+| ------ | ----- | ----- |
+| 双向绑定 | `defineModel`（3.4+）、`v-model` 多实例 | 受控组件 + onChange 手动绑定 |
+| 性能标记 | `shallowRef`、`v-memo`、`v-once` | `React.memo`、`useMemo`、`useCallback` |
+| 并发能力 | 无内置并发调度 | `useTransition`、`useDeferredValue` |
+| 服务端渲染 | Nuxt 3 / `onServerPrefetch` | Server Components + Suspense 流式 SSR |
+| 路由守卫 | 完整 12 步导航流程 + 元信息鉴权 | 路由库依赖（React Router loaders） |
+
+<Callout>
+面试中不要只说"Vue 很方便"或"React 很灵活"，而要说明响应式追踪 / 状态调度如何驱动渲染，以及你在项目里如何利用这些机制做优化。
+</Callout>

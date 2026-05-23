@@ -1,21 +1,754 @@
 ---
 title: Vue 专题
-description: 围绕响应式系统、组件通信和性能调优组织 Vue 面试重点。
+description: 从响应式引擎、编译优化到渲染管线，整理 Vue 高频追问。
+icon: Layers
+featuredOnHome: true
+homeLabel: 框架专题
+updatedAt: 2026-05-23
 ---
 
-## 常见问题
+<Callout type="info">
+Vue 专题题考的不是 API 记忆，而是你是否理解这套框架如何管理更新、组件边界和状态。先讲机制原理，再讲源码实现，最后落到项目实践。
+</Callout>
 
-- Vue 3 的响应式为什么基于 Proxy？
-- `ref` 和 `reactive` 的边界怎么判断？
-- `computed` 与 `watch` 的使用取舍是什么？
-- 组件通信和状态管理如何避免失控？
+## 高频主线
+
+- Vue 3 响应式为什么基于 Proxy 而非 defineProperty
+- `ref` 和 `reactive` 的边界怎么判断
+- `computed` 与 `watch` 的使用取舍是什么
+- 组件通信和状态管理如何避免失控
+- 编译器做了哪些优化，运行时如何配合
+
+## Script Setup 与编译宏
+
+Vue 3 推荐 `<script setup lang="ts">` 语法，顶层绑定自动暴露给模板，零运行时开销。
+
+<Tabs items={['defineProps', 'defineModel (3.4+)', 'defineExpose']}>
+
+```vue
+<script setup lang="ts">
+// 类型声明（推荐）
+const props = defineProps<{
+  title: string
+  count?: number
+}>()
+
+// 3.5+ 响应式解构（默认值直接写）
+const { title, count = 0 } = defineProps<{
+  title: string
+  count?: number
+}>()
+
+// 3.4 及以下用 withDefaults
+const props = withDefaults(defineProps<{
+  title: string
+  items?: string[]
+}>(), {
+  items: () => [] // 引用类型用工厂函数
+})
+</script>
+```
+
+```ts
+// 基本 — 创建 "modelValue" prop
+const model = defineModel<string>()
+model.value = 'hello' // 自动 emit "update:modelValue"
+
+// 具名 — 父级用 v-model:count
+const count = defineModel<number>('count', { default: 0 })
+
+// 带修饰符
+const [value, modifiers] = defineModel<string>()
+if (modifiers.trim) { /* ... */ }
+
+// 带转换器
+const [value, modifiers] = defineModel({
+  get(val) { return val?.toLowerCase() },
+  set(val) { return modifiers.trim ? val?.trim() : val }
+})
+```
+
+```ts
+import { ref } from 'vue'
+
+const count = ref(0)
+const reset = () => { count.value = 0 }
+
+// 显式暴露，组件默认封闭
+defineExpose({ count, reset })
+
+// 父级通过 ref 访问
+// const childRef = ref<{ count: number; reset: () => void }>()
+// childRef.value?.reset()
+```
+
+</Tabs>
+
+<Callout type="warn">
+组件默认封闭——不 `defineExpose` 的内容，父级通过 `ref` 访问不到。`defineModel` 在 3.4+ 可用，3.4 之前需手动写 `props + emit` 实现双向绑定。
+</Callout>
+
+## 响应式系统（源码级）
+
+### Vue 2：`Object.defineProperty`
+
+```js
+// Vue 2 响应式核心（简化）
+function defineReactive(obj, key, val) {
+  const dep = new Dep() // 每个属性一个依赖收集器
+  Object.defineProperty(obj, key, {
+    get() {
+      if (Dep.target) dep.depend() // 依赖收集
+      return val
+    },
+    set(newVal) {
+      val = newVal
+      dep.notify() // 派发更新
+    }
+  })
+}
+```
+
+**局限**：
+
+| 问题                 | 原因                                | 解决方案          |
+| -------------------- | ----------------------------------- | ----------------- |
+| 无法监听新增属性     | defineProperty 只能劫持已存在属性   | `Vue.set()`       |
+| 无法监听 delete      | 没有拦截 deleteProperty             | `Vue.delete()`    |
+| 数组索引/length 变化 | 索引不是已有属性                    | 重写 7 个数组方法 |
+| 初始化全量遍历       | 递归遍历 data 所有属性              | 性能开销大        |
+| 深层嵌套一次性代理   | 初始化时递归到最深层                | 无惰性代理        |
+
+### Vue 3：`Proxy`
+
+```js
+// Vue 3 reactive 核心（简化）
+function reactive(target) {
+  return new Proxy(target, {
+    get(target, key, receiver) {
+      const res = Reflect.get(target, key, receiver)
+      track(target, key) // 依赖收集
+      // 惰性深层代理：访问时才代理
+      return isObject(res) ? reactive(res) : res
+    },
+    set(target, key, value, receiver) {
+      const result = Reflect.set(target, key, value, receiver)
+      trigger(target, key) // 派发更新
+      return result
+    },
+    deleteProperty(target, key) {
+      const result = Reflect.deleteProperty(target, key)
+      trigger(target, key) // delete 也能触发
+    }
+  })
+}
+```
+
+**Proxy 解决的问题**：
+
+| 能力               | defineProperty | Proxy          |
+| ------------------ | -------------- | -------------- |
+| 监听新增属性       | 不能           | 自动           |
+| 监听 delete        | 不能           | `deleteProperty` |
+| 监听数组索引变化   | 需 hack        | 原生支持       |
+| 惰性深层代理       | 不能           | get 时递归代理 |
+| 代理 Map/Set/WeakMap | 不能        | 原生支持       |
+| 初始化开销         | 全量遍历       | 只代理第一层   |
+
+### 依赖收集：`effect` + `track` + `trigger`
+
+```
+┌─────────────────────────────────────────────┐
+│           effectStack (全局)                 │
+│  当前正在执行的副作用函数 (activeEffect)     │
+└──────────────────┬──────────────────────────┘
+                   │
+  响应式数据被读取 (get)
+                   │
+┌──────────────────▼──────────────────────────┐
+│  track(target, key)                          │
+│  将 activeEffect 存入 targetMap              │
+│    targetMap: WeakMap<target, Map<key, Set>> │
+│    结构: target → key → [effect1, effect2]  │
+└──────────────────────────────────────────────┘
+
+  响应式数据被修改 (set)
+                   │
+┌──────────────────▼──────────────────────────┐
+│  trigger(target, key)                        │
+│  从 targetMap 取出所有依赖的 effect          │
+│  依次执行 effect()                           │
+└──────────────────────────────────────────────┘
+```
+
+### `ref` vs `shallowRef`
+
+<Tabs items={['ref（深层）', 'shallowRef（浅层）']}>
+
+```ts
+// ref — 深层响应，修改嵌套属性也触发更新
+const user = ref({ name: 'John', profile: { age: 30 } })
+user.value.profile.age = 31 // 触发更新
+```
+
+```ts
+// shallowRef — 只追踪 .value 赋值，不追踪嵌套变化
+const data = shallowRef({ items: [] })
+data.value.items.push('new') // 不触发更新！
+data.value = { items: ['new'] } // 触发更新
+
+// 大型不可变数据推荐用 shallowRef，避免深层代理开销
+```
+
+</Tabs>
+
+<Callout>
+**优先 `shallowRef`** 用于大型数据结构或不需要深层响应的场景。`ref` 对基础类型用类包装（`.value` 的 get/set），对对象类型内部调用 `reactive`。
+</Callout>
+
+### `computed` 的实现
+
+```js
+// computed 本质：惰性求值的 effect + dirty 缓存标记
+function computed(getter) {
+  let value, dirty = true
+
+  const effect = new ReactiveEffect(getter, () => {
+    if (!dirty) {
+      dirty = true // 依赖变化时标记脏
+      triggerRefValue(computedRef) // 通知依赖 computed 的 effect
+    }
+  })
+
+  const computedRef = {
+    get value() {
+      if (dirty) {
+        value = effect.run() // 重新执行 getter
+        dirty = false // 标记干净
+      }
+      trackRefValue(computedRef) // 收集依赖
+      return value
+    }
+  }
+  return computedRef
+}
+```
+
+**关键设计**：
+
+- **惰性求值**：只有被读取时才执行 getter
+- **缓存**：`dirty = false` 期间直接返回缓存值
+- **依赖传递**：computed 自身也能被其他 effect/computed/watch 依赖
+
+### `watch` vs `watchEffect`
+
+| 维度         | `watch`                          | `watchEffect`              |
+| ------------ | -------------------------------- | -------------------------- |
+| 数据源       | 显式指定 `watch(source, cb)`     | 自动追踪回调内所有响应式引用 |
+| 旧值         | 回调接收 `(newVal, oldVal)`      | 无旧值                     |
+| 首次执行     | 默认不执行（`immediate: true`）  | 立即执行                   |
+| 惰性         | 是                               | 否                         |
+| 深度监听     | `{ deep: n }` 限制深度（3.5+）  | 自动追踪                   |
+| 一次性       | `{ once: true }`（3.4+）        | —                          |
+| 暂停/恢复    | —                                | `pause()` / `resume()`（3.5+） |
+| 清理         | `onWatcherCleanup()`（3.5+）    | 同左                       |
+| 适用场景     | 需要对比新旧值、条件触发         | 副作用与数据源一致         |
+
+```ts
+// watchEffect with cleanup (Vue 3.5+)
+watchEffect(async () => {
+  const controller = new AbortController()
+  onWatcherCleanup(() => controller.abort())
+
+  const res = await fetch(`/api/${id.value}`, { signal: controller.signal })
+  data.value = await res.json()
+})
+```
+
+### Flush 时机
+
+```ts
+// 'pre'（默认）— 组件更新前
+// 'post' — 组件更新后（可访问更新后的 DOM）
+// 'sync' — 立即同步执行，慎用
+
+watch(source, callback, { flush: 'post' })
+watchPostEffect(() => {})  // flush: 'post' 的简写
+```
+
+## ref vs reactive 实战决策
+
+| 场景                 | 推荐       | 原因                             |
+| -------------------- | ---------- | -------------------------------- |
+| 基础类型             | `ref`      | reactive 不支持基础类型          |
+| 表单数据（多字段）   | `reactive` | 不用写 `.value`，更简洁          |
+| 需要整体替换         | `ref`      | `reactive` 整体替换会丢失代理    |
+| 解构后使用           | `ref`      | `reactive` 解构丢失响应式        |
+| 组合函数返回值       | `ref`      | 保持响应式，调用方用 `.value`    |
+| 团队统一             | `ref`      | 官方推荐，减少心智负担           |
+
+<Callout type="warn">
+`reactive` 解构后丢失响应式！用 `toRefs()` 包装或改用 `ref`。Vue 3.5+ 支持响应式 Props 解构，但仅限 `defineProps` 返回值，普通 `reactive` 仍需 `toRefs`。
+</Callout>
+
+```ts
+const state = reactive({ name: 'Tom', age: 18 })
+const { name, age } = state          // 丢失响应式
+const { name, age } = toRefs(state)  // 每个属性变成 ref，保持响应式
+```
+
+## 虚拟 DOM 与渲染管线
+
+### 渲染流程
+
+```
+模板/渲染函数
+  ↓
+编译器 compile()
+  ↓
+渲染函数 render()
+  ↓
+创建 VNode（虚拟 DOM 节点）
+  ↓
+渲染器 renderer
+  ↓  首次渲染
+创建真实 DOM（mount）
+  ↓  后续更新
+Diff 新旧 VNode → 生成补丁（patch）
+  ↓
+最小化更新真实 DOM
+```
+
+### VNode 结构（简化）
+
+```ts
+interface VNode {
+  type: string | Component  // 标签名或组件
+  props: Record<string, any> // 属性
+  children: VNode[] | string // 子节点
+  key: string | number       // diff 时的 key
+  patchFlag: number          // 编译期标记的动态部分
+  dynamicProps: string[]     // 哪些 prop 是动态的
+  shapeFlag: number          // 节点类型位标记
+}
+```
+
+### Diff 算法：同层对比 + Key + LIS
+
+1. **同层比较**：只比较同一层级的节点，不跨层
+2. **类型不同**：直接替换整个子树
+3. **类型相同 + Key 相同**：复用节点，更新 props/children
+4. **Key 不同**：视为不同节点，重建
+
+Vue 3 对有 Key 的子节点列表使用**最长递增子序列（LIS）**算法减少移动次数：
+
+```ts
+// 旧: [A, B, C, D, E]
+// 新: [A, C, D, B, E]
+// LIS: [A, C, D, E] → 只需移动 B
+```
+
+<Callout>
+相比 Vue 2 的双端对比，Vue 3 的 LIS 算法在乱序场景下移动次数更少，性能更优。
+</Callout>
+
+## 编译优化
+
+Vue 3 编译器在编译期分析模板，生成带优化标记的渲染函数，减少运行时开销。
+
+### 静态提升（Static Hoisting）
+
+```html
+<div>
+  <span class="static">不会变化的文本</span>
+  <p>{{ dynamic }}</p>
+</div>
+```
+
+编译后：
+
+```js
+// 静态节点提升到渲染函数外部，只创建一次
+const _hoisted_1 = /*#__PURE__*/ _createElementVNode(
+  "span", { class: "static" }, "不会变化的文本", -1 /* HOISTED */
+)
+
+function render(_ctx) {
+  return _createElementVNode("div", null, [
+    _hoisted_1,  // 直接复用，不重新创建
+    _createElementVNode("p", null, _toDisplayString(_ctx.dynamic), 1 /* TEXT */)
+  ])
+}
+```
+
+### 补丁标记（PatchFlag）
+
+编译器为动态节点打上位标记，diff 时只检查标记的部分：
+
+| 标记值           | 含义                          |
+| ---------------- | ----------------------------- |
+| `1` TEXT         | 只有文本内容动态              |
+| `2` CLASS        | 只有 class 动态               |
+| `4` STYLE        | 只有 style 动态               |
+| `8` PROPS        | 有动态属性                    |
+| `16` FULL_PROPS  | 属性完全动态（需全量 diff）   |
+| `32` HYDRATE_EVENTS | 事件监听器                 |
+| `64` STABLE_FRAGMENT | 子节点顺序不变的 Fragment |
+| `128` KEYED_FRAGMENT | 带 key 的 Fragment        |
+| `256` UNKEYED_FRAGMENT | 无 key 的 Fragment      |
+
+<Callout>
+PatchFlag 的核心价值：diff 时跳过静态节点，只检查标记为动态的部分。传统虚拟 DOM 需要全量遍历，Vue 3 只遍历动态节点。
+</Callout>
+
+### 块级树（Block Tree）
+
+- 根节点是一个 Block，收集所有动态子节点到 `dynamicChildren` 数组
+- `v-if`/`v-for` 会创建子 Block（Fragment）
+- diff 时直接遍历 `dynamicChildren`，跳过所有静态节点
+
+```
+传统 VNode diff:  遍历整棵树 O(全部节点)
+Block diff:       遍历动态节点 O(动态节点数)
+```
+
+### 事件缓存
+
+```js
+// 不缓存：每次渲染创建新函数
+createElementVNode("button", { onClick: ctx.handleClick })
+
+// 缓存：同一函数引用，避免子组件不必要的更新
+createElementVNode("button", {
+  onClick: _cache[0] || (_cache[0] = (...args) => ctx.handleClick(...args))
+})
+```
+
+### 编译优化总结
+
+| 优化手段         | 原理                         | 收益                     |
+| ---------------- | ---------------------------- | ------------------------ |
+| 静态提升         | 不变节点只创建一次           | 减少创建/对比开销        |
+| 补丁标记         | 位标记只 diff 动态部分       | 跳过静态节点             |
+| 块级树           | 扁平化动态子节点列表         | O(全部) → O(动态)        |
+| 事件缓存         | 缓存事件处理函数引用         | 避免子组件无效更新       |
+| 静态属性提升     | 不变的 props 对象只创建一次  | 减少对象创建             |
+
+## 组合式函数（Composables）
+
+### 设计原则
+
+```ts
+// 命名：use 前缀
+// 接受响应式输入：用 toValue()（3.3+）统一 ref/getter/原始值
+// 返回 refs：保持解构后的响应式
+import { ref, onMounted, onUnmounted, toValue, type MaybeRefOrGetter } from 'vue'
+
+export function useFetch(url: MaybeRefOrGetter<string>) {
+  const data = ref(null)
+  const error = ref(null)
+
+  watchEffect(async () => {
+    data.value = null
+    error.value = null
+    try {
+      const res = await fetch(toValue(url))
+      data.value = await res.json()
+    } catch (e) {
+      error.value = e
+    }
+  })
+
+  return { data, error }
+}
+
+// 所有调用方式都有效：
+useFetch('/api/users')
+useFetch(urlRef)
+useFetch(() => `/api/users/${props.id}`)
+```
+
+### Composable vs Mixin（Vue 2）
+
+| 维度     | Mixin            | Composable          |
+| -------- | ---------------- | ------------------- |
+| 命名冲突 | 可能             | 显式解构，无冲突    |
+| 来源不清 | 不知属性来自哪个 Mixin | 清晰的返回值来源 |
+| 类型推导 | 无               | 完整 TS 支持        |
+| 灵活性   | 固定结构         | 可组合、可传参      |
+
+### Effect Scope
+
+```ts
+import { effectScope, onScopeDispose } from 'vue'
+
+const scope = effectScope()
+scope.run(() => {
+  const count = ref(0)
+  const doubled = computed(() => count.value * 2)
+  watch(count, () => console.log(count.value))
+  onScopeDispose(() => console.log('Scope disposed'))
+})
+
+// 一次性释放所有 effect、computed、watch
+scope.stop()
+```
+
+<Callout>
+`effectScope` 适合在 Composable 中批量管理副作用。调用 `scope.stop()` 即可一次性清理所有 watch/computed/事件监听，无需逐个手动清理。
+</Callout>
+
+## 内置组件
+
+### KeepAlive
+
+```vue
+<KeepAlive :include="['UserList', 'Settings']" :max="10">
+  <component :is="currentTab" />
+</KeepAlive>
+```
+
+- 缓存组件实例，避免重复创建/销毁
+- 生命周期：`onActivated` / `onDeactivated`
+- `include` / `exclude`：支持字符串、正则、数组
+- `max`：最大缓存数，超出用 LRU 淘汰
+
+### Teleport
+
+```vue
+<Teleport to="body" :disabled="isMobile" defer>
+  <!-- defer (3.5+): 延迟到目标挂载后再传送 -->
+  <div class="modal">...</div>
+</Teleport>
+```
+
+### Suspense
+
+```vue
+<Suspense @pending @resolve @fallback>
+  <template #default>
+    <AsyncComponent />
+  </template>
+  <template #fallback>
+    <Spinner />
+  </template>
+</Suspense>
+```
+
+- 等待异步依赖：`async setup()` 或 `<script setup>` 中顶层 `await`
+- 实验性 API，API 可能变动
+
+### Transition / TransitionGroup
+
+| 类名                | 时机             |
+| ------------------- | ---------------- |
+| `{name}-enter-from` | 进入起始状态     |
+| `{name}-enter-active` | 进入激活状态   |
+| `{name}-enter-to`   | 进入结束状态     |
+| `{name}-leave-from` | 离开起始状态     |
+| `{name}-leave-active` | 离开激活状态   |
+| `{name}-leave-to`   | 离开结束状态     |
+
+```vue
+<!-- 模式切换 -->
+<Transition name="fade" mode="out-in">
+  <component :is="currentView" />
+</Transition>
+
+<!-- 首次渲染动画 -->
+<Transition appear name="fade">
+  <div>初始渲染也有过渡</div>
+</Transition>
+
+<!-- 列表过渡 -->
+<TransitionGroup name="list" tag="ul">
+  <li v-for="item in items" :key="item.id">{{ item.text }}</li>
+</TransitionGroup>
+```
+
+### v-memo 与 v-once
+
+```vue
+<!-- v-memo: 依赖不变则跳过更新 -->
+<div v-for="item in list" :key="item.id" v-memo="[item.selected]">
+  <ExpensiveComponent :item="item" />
+</div>
+
+<!-- v-once: 只渲染一次，后续跳过 -->
+<span v-once>静态: {{ initialValue }}</span>
+
+<!-- v-memo="[]" 等价于 v-once -->
+<div v-memo="[]">永不更新</div>
+```
+
+## 组件通信模式
+
+### 父子通信
+
+| 方式         | 方向   | Vue 3 写法                     | 说明               |
+| ------------ | ------ | ------------------------------ | ------------------ |
+| props        | 父→子  | `defineProps<T>()`             | 单向数据流         |
+| emit         | 子→父  | `defineEmits<T>()` + `emit()`  | 需提前声明         |
+| v-model      | 双向   | `defineModel()` (3.4+)         | 简化双向绑定       |
+| ref + expose | 父→子  | `ref` + `defineExpose()`       | 调用子组件方法     |
+
+### 跨级通信
+
+| 方式             | 适用场景                 | 说明                         |
+| ---------------- | ------------------------ | ---------------------------- |
+| provide/inject   | 深层嵌套、主题/配置      | 祖先 provide，后代 inject   |
+| Pinia            | 全局状态                 | 替代 Vuex，TS 原生          |
+| mitt / EventBus  | 任意组件                 | Vue 3 需第三方库            |
+
+<Callout type="warn">
+`provide/inject` 传 `ref`/`reactive` 才能保持响应式。传普通对象，后代拿到的不是响应式的。
+</Callout>
+
+## 状态管理：Pinia
+
+```ts
+export const useUserStore = defineStore('user', () => {
+  const name = ref('Tom')
+  const isAdmin = computed(() => name.value === 'admin')
+
+  function login(newName: string) {
+    name.value = newName
+  }
+
+  return { name, isAdmin, login }
+})
+```
+
+### Pinia vs Vuex
+
+| 维度       | Vuex                        | Pinia                     |
+| ---------- | --------------------------- | ------------------------- |
+| Mutation   | 必须有，同步修改            | 已移除，Action 统一      |
+| 模块化     | 嵌套 modules                | 平铺独立 store            |
+| TS 支持    | 较弱                        | 原生完整                  |
+| 体积       | 较大                        | ~1KB                      |
+
+### 解构保持响应式
+
+```ts
+const store = useUserStore()
+const { name } = store             // 丢失响应式！
+const { name } = storeToRefs(store) // 保持响应式
+```
+
+## Vue Router 深入
+
+### hash vs history 模式
+
+| 维度       | hash 模式                | history 模式               |
+| ---------- | ------------------------ | -------------------------- |
+| URL 样式   | `http://xxx/#/path`      | `http://xxx/path`          |
+| 原理       | `hashchange` 事件        | `pushState/replaceState`   |
+| 服务器配置 | 无需                    | 需配置（否则刷新 404）     |
+| SEO        | 不利                    | 友好                       |
+
+### 导航守卫完整流程
+
+```
+1. 导航被触发
+2. beforeRouteLeave（失活组件）
+3. beforeEach（全局前置）
+4. beforeRouteUpdate（重用组件）
+5. beforeEnter（路由配置）
+6. 解析异步路由组件
+7. beforeRouteEnter（激活组件）
+8. beforeResolve（全局解析）
+9. 导航确认
+10. afterEach（全局后置）
+11. DOM 更新
+12. beforeRouteEnter 的 next 回调
+```
+
+### 路由元信息 + 守卫实战
+
+```ts
+router.beforeEach((to) => {
+  const auth = useAuthStore()
+  if (to.meta.requiresAuth && !auth.isLoggedIn) {
+    return { name: 'login', query: { redirect: to.fullPath } }
+  }
+})
+```
+
+## 性能优化
+
+### 渲染优化
+
+| 手段                 | 原理                             | 场景               |
+| -------------------- | -------------------------------- | ------------------ |
+| `v-once`             | 只渲染一次，后续跳过            | 纯静态内容         |
+| `v-memo`             | 依赖不变则跳过更新              | 大列表 + 少量变化  |
+| `shallowRef`         | 只追踪 `.value`，不深层代理     | 大型不可变数据     |
+| `shallowReactive`    | 只代理第一层                     | 同上               |
+| `markRaw`            | 标记对象永不代理                | 第三方库实例       |
+| 虚拟滚动             | 只渲染可见区域                  | 超长列表           |
+| 按需更新             | `key` + PatchFlag               | 编译器自动         |
+
+### 响应式开销控制
+
+```ts
+// 大型数据不需要深层响应式
+const bigList = shallowRef<Item[]>([])
+
+// 第三方实例不需要代理
+const chart = markRaw(new Chart(element))
+
+// 读取原始对象（不触发依赖）
+const raw = toRaw(reactiveObj)
+```
+
+### 路由与组件懒加载
+
+```ts
+const routes = [
+  {
+    path: '/user',
+    component: () => import('./views/User.vue') // 路由级懒加载
+  }
+]
+
+// 异步组件
+const AsyncComp = defineAsyncComponent(() => import('./HeavyChart.vue'))
+```
+
+## 生命周期
+
+### Vue 3 完整列表
+
+| Composition API       | 时机                           | 典型用途                     |
+| -------------------- | ------------------------------ | ---------------------------- |
+| `setup()`            | 创建实例后                     | 初始化数据、组合函数         |
+| `onBeforeMount`      | 挂载前                         | 最后的数据修改               |
+| `onMounted`          | 挂载后                         | DOM 操作、第三方库初始化     |
+| `onBeforeUpdate`     | 更新前                         | 获取旧 DOM 快照              |
+| `onUpdated`          | 更新后                         | 操作更新后的 DOM             |
+| `onBeforeUnmount`    | 卸载前                         | 清理定时器、移除监听（最重要） |
+| `onUnmounted`        | 卸载后                         | 通知清理完成                 |
+| `onActivated`        | KeepAlive 激活                | 刷新数据、恢复轮询           |
+| `onDeactivated`      | KeepAlive 失活                | 暂停轮询、保存滚动位置       |
+| `onErrorCaptured`    | 子组件渲染错误                 | 错误边界、阻止冒泡           |
+| `onServerPrefetch`   | SSR 预取                       | 服务端数据预取               |
+
+## 常见误区
+
+| 误区                           | 正解                                       |
+| ------------------------------ | ------------------------------------------ |
+| `reactive` 解构后还是响应式    | 解构丢失代理，用 `toRefs` 或改用 `ref`    |
+| `computed` 可以替代 `watch`    | computed 是纯派生，watch 是副作用          |
+| `nextTick` 一定是微任务        | 实现取决于环境（Promise → MutationObserver → setTimeout） |
+| Vue 3 不需要 `key`             | 列表 diff 仍然需要 key 来识别节点          |
+| `v-if` 和 `v-for` 可以同元素   | Vue 3 优先级变了但仍然不推荐，用 computed  |
+| Pinia action 里不能异步        | Pinia action 天然支持 async/await          |
+| `shallowRef` 修改嵌套值能触发  | 只追踪 `.value` 赋值，嵌套修改需替换整个值 |
 
 ## 项目题结合点
 
-- 大表单或复杂弹窗如何拆状态
-- 列表场景下如何避免无效更新
-- 组合式函数怎么沉淀复用逻辑
-
-## 一个有效回答的样子
-
-不要只说“Vue 很方便”，而要说明响应式追踪、依赖收集、触发更新以及你在项目里如何利用这些机制做优化。
+- 大表单或复杂弹窗如何拆状态（Composable + provide/inject）
+- 列表场景下如何避免无效更新（`v-memo` + `shallowRef` + 虚拟滚动）
+- 组合式函数怎么沉淀复用逻辑（`use` 前缀 + `toValue` 接受输入 + 返回 refs + `effectScope` 批量清理）
+- 跨组件通信如何避免失控（Pinia > provide/inject > mitt，按层级选择）

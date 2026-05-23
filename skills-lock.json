@@ -6,6 +6,30 @@
       "sourceType": "github",
       "skillPath": "plugins/stitch-utilities/skills/design-md/SKILL.md",
       "computedHash": "44af3e6e89a42a765d9cebf943f1e2ff3cdf43d1958341eb43fb7b74116f6691"
+    },
+    "react": {
+      "source": "vercel-labs/json-render",
+      "sourceType": "github",
+      "skillPath": "skills/react/SKILL.md",
+      "computedHash": "67d6daabd85c23cc58eeabea56f25b899723932dfb69c55ddae4990b43c918d2"
+    },
+    "react:components": {
+      "source": "google-labs-code/stitch-skills",
+      "sourceType": "github",
+      "skillPath": "plugins/stitch-build/skills/react-components/SKILL.md",
+      "computedHash": "558c6619e28aaf6222828591e531bfc83c2f4fbb2fda3d02300d92b2ca9fa709"
+    },
+    "vue": {
+      "source": "antfu/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vue/SKILL.md",
+      "computedHash": "f72b54618560c53d65740515ded5bb833750c4574dbe961fd21f022bd2b31a74"
+    },
+    "vue3": {
+      "source": "teachingai/full-stack-skills",
+      "sourceType": "github",
+      "skillPath": "skills/vue-skills/vue3/SKILL.md",
+      "computedHash": "22064033865f8085a253ac3c03a243f30f7a0875483660dfe3afd38f52e8e036"
     }
   }
 }
