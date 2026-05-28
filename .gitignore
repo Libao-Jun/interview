@@ -27,4 +27,4 @@ next-env.d.ts
 
 # Claude Code 本地/敏感配置
 .claude/settings.local.json
-.mcp.json
+.claude/.mcp.json
