@@ -73,16 +73,6 @@ icon: Layers
   created/mounted） - 失活：`deactivated`（不经过 destroy）
 </Callout>
 
-## data 为什么是函数
-
-- **根实例**：data 可以是对象（单例，不复用）
-- **组件**：data 必须是函数（防止多个实例共享同一引用）
-
-<Callout>
-  组件复用时，如果 data 是对象，所有实例引用同一份数据 →
-  数据污染。函数每次返回新对象，保证独立性。
-</Callout>
-
 ## 虚拟 DOM
 
 - `真实 DOM`：浏览器中渲染的实际节点对象，直接操作开销大。
@@ -98,9 +88,31 @@ icon: Layers
 ## Diff 算法
 
 <Callout type="info" title="概念">
-  Diff 算法是同层级比较新旧 VNode 子节点的算法，找出最小差异，再批量更新到真实
-  DOM。 - Vue2 用双端比较（头头、尾尾、头尾、尾头） - Vue3 用快速 Diff (Fast
-  Diff) + 最长递增子序列。
+Diff 算法是同层级比较新旧 VNode 子节点的算法，找出最小差异，再批量更新到真实 DOM。 
+- Vue2 用双端比较（头头、尾尾、头尾、尾头） 
+- Vue3 用快速 Diff (Fast Diff) + 最长递增子序列。
+</Callout>
+
+## data 为什么是函数
+
+- **根实例**：data 可以是对象（单例，不复用）
+- **组件**：data 必须是函数（防止多个实例共享同一引用）
+
+<Callout>
+  组件复用时，如果 data 是对象，所有实例引用同一份数据 →
+  数据污染。函数每次返回新对象，保证独立性。
+</Callout>
+
+## methods 不能用箭头函数
+
+📚 this 指向问题（根本原因）
+
+- 是因为箭头函数的 `this` 指向定义时的外层作用域的 `this`，
+- 导致`无法正确指向 Vue 实例`，进而不能访问 `data`、`methods` 等组件属性。
+
+<Callout type="info" title="Vue 内部绑定机制">
+- Vue 在实例化时，会遍历 `methods` 对象，用 `bind` 将每个方法的 `this` 绑定到 Vue 实例。
+- 但箭头函数无法被 `bind` 改变 `this`，所以绑定失败
 </Callout>
 
 ## v-for 中 key 的作用
