@@ -16,7 +16,7 @@ import { source } from "@/lib/source";
 
 const tracks = [
   {
-    title: "基础原理",
+    title: "基础知识",
     href: "/docs/fundamentals",
     description: "HTML/CSS、JavaScript/TypeScript、浏览器渲染与网络链路。",
     icon: BrainCircuit,
@@ -139,7 +139,7 @@ export default function HomePage() {
                 零散面试题和项目经验整理成的知识库
               </h1>
               <p className="max-w-2xl text-base leading-7 text-slate-600 sm:text-lg dark:text-slate-300">
-                一套围绕基础原理、框架实战和工程化场景展开的面试路线图。
+                一套围绕基础知识、框架实战和工程化场景展开的面试路线图。
               </p>
             </div>
 
@@ -207,7 +207,7 @@ export default function HomePage() {
                   Day 1-2
                 </p>
                 <p className="mt-1 text-sm font-medium text-slate-900 dark:text-white">
-                  补全基础原理空白
+                  补全基础知识空白
                 </p>
                 <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">
                   优先复盘渲染流程、事件循环、作用域链和网络链路。
@@ -247,7 +247,7 @@ export default function HomePage() {
                   Role-Based Entry
                 </p>
                 <h2 className="text-2xl font-semibold text-slate-950 dark:text-white">
-                  按入门/进阶/高级/专家切入。
+                  按入门/进阶/高级/专家切入
                 </h2>
               </div>
               <p className="max-w-sm text-sm leading-6 text-slate-500 dark:text-slate-300">
