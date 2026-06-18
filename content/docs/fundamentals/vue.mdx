@@ -34,21 +34,37 @@ Vue 3 插件注册必须在 `app.mount()` 之前，否则不生效。
 
 ### Vue 2
 
-| 钩子           | 可访问 data | 可操作 DOM | 适用场景                       |
-| -------------- | ----------- | ---------- | ------------------------------ |
-| `created`      | 是          | 否         | 数据请求、初始化               |
-| `mounted`      | 是          | 是         | DOM 操作、第三方库初始化       |
-| `updated`      | 是          | 是         | 操作更新后的 DOM               |
-| `beforeDestroy`| 是          | 是         | 清理定时器、移除监听（最重要） |
+| 钩子            | 可访问 data | 可操作 DOM | 适用场景                       |
+| --------------- | ----------- | ---------- | ------------------------------ |
+| `beforeCreate`  | `否`          | `否`         | 初始化前（几乎不用）           |
+| `created`       | 是          | `否`         | 数据请求、初始化               |
+| `beforeMount`   | 是          | `否`         | 挂载前的最后数据修改           |
+| `mounted`       | 是          | 是         | DOM 操作、第三方库初始化       |
+| `beforeUpdate`  | 是          | 是         | 更新前获取旧 DOM 状态          |
+| `updated`       | 是          | 是         | 操作更新后的 DOM               |
+| `beforeDestroy` | 是          | 是         | 清理定时器、移除监听（最重要） |
+| `destroyed`     | 是          | `否`         | 清理完成的通知                 |
+| `activated`     | 是          | 是         | keep-alive 激活                |
+| `deactivated`   | 是          | 是         | keep-alive 失活                |
+| `errorCaptured` | 是          | 是         | 捕获子组件错误                 |
 
 ### Vue 3
 
-| Options API      | Composition API    | 适用场景                       |
-| ---------------- | ------------------ | ------------------------------ |
-| `beforeMount`    | `onBeforeMount`    | 最后的数据修改                 |
-| `mounted`        | `onMounted`        | DOM 操作、第三方库初始化       |
-| `beforeUnmount`  | `onBeforeUnmount`  | 清理资源（最重要）             |
-| `unmounted`      | `onUnmounted`      | 清理完成的通知                 |
+| Options API       | Composition API       | 适用场景                       |
+| ----------------- | --------------------- | ------------------------------ |
+| `beforeCreate`    | `setup()`             | 初始化前（几乎不用，setup 替代） |
+| `created`         | `setup()`             | 数据请求、初始化（setup 替代） |
+| `beforeMount`     | `onBeforeMount`       | 挂载前的最后数据修改           |
+| `mounted`         | `onMounted`           | DOM 操作、第三方库初始化       |
+| `beforeUpdate`    | `onBeforeUpdate`      | 更新前获取旧 DOM 状态          |
+| `updated`         | `onUpdated`           | 操作更新后的 DOM               |
+| `beforeUnmount`   | `onBeforeUnmount`     | 清理资源（最重要）             |
+| `unmounted`       | `onUnmounted`         | 清理完成的通知                 |
+| `activated`       | `onActivated`         | keep-alive 激活                |
+| `deactivated`     | `onDeactivated`       | keep-alive 失活                |
+| `errorCaptured`   | `onErrorCaptured`     | 捕获子组件错误                 |
+| `renderTracked`   | `onRenderTracked`     | 调试用，追踪响应式依赖（dev）  |
+| `renderTriggered` | `onRenderTriggered`   | 调试用，追踪重渲染触发（dev）  |
 
 ### keep-alive 缓存组件
 
