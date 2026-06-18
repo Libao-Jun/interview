@@ -298,22 +298,24 @@ nextTick(() => {
 
 ## 组件间通信
 
-| 方式         | Vue 2               | Vue 3                  | 核心差异               |
-| ------------ | ------------------- | ---------------------- | ---------------------- |
-| 父 → 子      | `props`             | `defineProps`          | TS 类型推导更强        |
-| 子 → 父      | `$emit`             | `defineEmits`          | 需提前声明             |
-| 双向绑定     | `v-model` + `.sync` | `v-model`（多个）      | 更统一                 |
-| 事件总线     | `EventBus`          | `mitt`                 | Vue 3 移除实例事件方法 |
-| 跨级状态     | `Vuex`              | `Pinia / Vuex`         | 更轻量，TS 原生        |
-| 跨级注入     | `provide/inject`    | `provide/inject`       | 依赖注入               |
-| 传结构或模板 | `slot`              | `slot`                 | 插槽                   |
-| 获取子实例   | `$refs`             | `ref` + `defineExpose` | 需显式暴露             |
+1️⃣ 父子组件
+  - 父子通信：父 -> 子（`props`），子 -> 父（`emit`）
+  - 双向绑定：`v-model`
+  - 传结构或模板：`slot`
+  - 调子组件方法：`ref + defineExpose`
 
-📚 跨标签页 / iframe / 浏览器上下文
+2️⃣ 祖孙/跨多层组件
+  - 跨层共享上下文：`provide / inject`
+  - 组件透传属性和事件：`$attrs`
 
-- `BroadcastChannel`
-- `postMessage`
-- `storage`
+3️⃣ 兄弟组件
+  - 共享业务状态：`Pinia / Vuex`
+  - 只是通知：`mitt`
+
+4️⃣ 跨标签页/iframe/浏览器上下文
+  - `BroadcastChannel`
+  - `postMessage`
+  - `storage`
 
 ## Vue Router
 
