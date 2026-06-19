@@ -5,10 +5,11 @@
     "index",
     "html",
     "es6",
-    "css",
-    "vue",
     "javascript",
     "typescript",
+    "css",
+    "vue",
+    "react",
     "network",
     "browser"
   ]

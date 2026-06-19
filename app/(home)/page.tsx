@@ -23,13 +23,6 @@ const tracks = [
     tone: "from-amber-100 via-white to-amber-50",
   },
   {
-    title: "框架专题",
-    href: "/docs/frameworks",
-    description: "Vue 与 React 的响应式、渲染模型、状态流和性能抓手。",
-    icon: Blocks,
-    tone: "from-sky-100 via-white to-cyan-50",
-  },
-  {
     title: "工程化与场景题",
     href: "/docs/engineering",
     description: "性能优化、构建链路、发布交付与项目架构题的组织方式。",
