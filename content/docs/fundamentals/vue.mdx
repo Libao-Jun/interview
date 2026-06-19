@@ -391,15 +391,13 @@ const { name, age } = toRefs(state); // 每个属性变成 ref，保持响应式
 
 ## ref vs shallowRef
 
-<Tabs items={['ref（深层）', 'shallowRef（浅层）']}>
-
-```ts
+```ts tab="ref（深层）"
 // ref — 深层响应，修改嵌套属性也触发更新
 const user = ref({ name: "John", profile: { age: 30 } });
 user.value.profile.age = 31; // 触发更新
 ```
 
-```ts
+```ts tab="shallowRef（浅层）"
 // shallowRef — 只追踪 .value 赋值，不追踪嵌套变化
 const data = shallowRef({ items: [] });
 data.value.items.push("new"); // 不触发更新！
@@ -407,8 +405,6 @@ data.value = { items: ["new"] }; // 触发更新
 
 // 大型不可变数据推荐用 shallowRef，避免深层代理开销
 ```
-
-</Tabs>
 
 <Callout title="ref 与 shallowRef 选择策略">
   - **优先 `shallowRef`** 用于大型数据结构或不需要深层响应的场景。 - `ref`
@@ -692,9 +688,8 @@ nextTick(() => {
   **modules**：模块化
 </Callout>
 
-1️⃣ 用户 Store
 
-```js
+```js tab="userStore.js"
 // store/user.js (Vuex 4)
 import { createStore } from "vuex";
 
@@ -738,9 +733,7 @@ const store = createStore({
 export default store;
 ```
 
-2️⃣ 在选项式 API 中使用
-
-```vue
+```vue tab="选项式中使用"
 <template>
   <div>
     <p>用户名: {{ name }}</p>
@@ -767,9 +760,7 @@ export default {
 </script>
 ```
 
-3️⃣ 在 `<script setup>` 中使用
-
-```vue
+```vue tab="在 setup 中使用"
 <template>
   <div>
     <!-- 通过 $store 访问 -->
@@ -810,9 +801,7 @@ function handleLogin() {
   异步操作（不再区分 mutation）
 </Callout>
 
-1️⃣ 用户 Store
-
-```ts
+```ts tab="useUserStore"
 export const useUserStore = defineStore("user", () => {
   const name = ref("Tom");
   const isAdmin = computed(() => name.value === "admin");
@@ -825,9 +814,7 @@ export const useUserStore = defineStore("user", () => {
 });
 ```
 
-2️⃣ 解构保持响应式
-
-```ts
+```ts tab="使用"
 const store = useUserStore();
 
 // ❌ 错误：直接解构会丢失响应式
