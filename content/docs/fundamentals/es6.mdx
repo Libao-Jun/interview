@@ -5,53 +5,56 @@ icon: Zap
 ---
 
 <Callout type="info">
-ES6+ 题常围绕"为什么这样设计"展开。比如 let 的暂时性死区不是 bug，而是语义约束；Promise 的微优先级也不是巧合，而是为了减少延迟。
+  ES6+ 题常围绕"为什么这样设计"展开。比如 let 的暂时性死区不是
+  bug，而是语义约束；Promise 的微优先级也不是巧合，而是为了减少延迟。
 </Callout>
 
 ## let / const / var
 
-| 特性       | `var`           | `let`         | `const`       |
-| ---------- | --------------- | ------------- | ------------- |
-| 作用域     | 函数作用域      | 块级作用域    | 块级作用域    |
-| 变量提升   | 声明+初始化提升 | 声明提升（TDZ）| 声明提升（TDZ）|
-| 重复声明   | 允许            | 不允许        | 不允许        |
-| 重新赋值   | 允许            | 允许          | 不允许        |
+| 特性     | `var`           | `let`           | `const`         |
+| -------- | --------------- | --------------- | --------------- |
+| 作用域   | 函数作用域      | 块级作用域      | 块级作用域      |
+| 变量提升 | 声明+初始化提升 | 声明提升（TDZ） | 声明提升（TDZ） |
+| 重复声明 | 允许            | 不允许          | 不允许          |
+| 重新赋值 | 允许            | 允许            | 不允许          |
 
 ### 暂时性死区（TDZ）
 
 从块级作用域开始到 `let`/`const` 声明语句之间的区域，访问变量会抛出 `ReferenceError`。
 
 ```js
-console.log(a) // ReferenceError
-let a = 1
+console.log(a); // ReferenceError
+let a = 1;
 ```
 
 ## 箭头函数
 
 ### 与普通函数的区别
 
-| 特性           | 普通函数   | 箭头函数     |
-| -------------- | ---------- | ------------ |
-| `this` 指向    | 调用时决定 | 定义时继承外层 |
-| `arguments`    | 有         | 无           |
-| `constructor`  | 可作为构造函数 | 不可      |
-| `prototype`    | 有         | 无           |
-| `yield`        | 可作为生成器 | 不可        |
+| 特性          | 普通函数       | 箭头函数       |
+| ------------- | -------------- | -------------- |
+| `this` 指向   | 调用时决定     | 定义时继承外层 |
+| `arguments`   | 有             | 无             |
+| `constructor` | 可作为构造函数 | 不可           |
+| `prototype`   | 有             | 无             |
+| `yield`       | 可作为生成器   | 不可           |
 
 ## 解构赋值
 
 ```js
 // 数组
-const [a, b, ...rest] = [1, 2, 3, 4]
+const [a, b, ...rest] = [1, 2, 3, 4];
 
 // 对象
-const { name, age = 18 } = { name: 'Tom' }
+const { name, age = 18 } = { name: "Tom" };
 
 // 嵌套
-const { data: { list } } = response
+const {
+  data: { list },
+} = response;
 
 // 重命名 + 默认值
-const { name: userName = 'anonymous' } = obj
+const { name: userName = "anonymous" } = obj;
 ```
 
 ## 模板字符串
@@ -62,10 +65,10 @@ const { name: userName = 'anonymous' } = obj
 
 ## 扩展运算符 `...`
 
-| 场景     | 示例                              |
-| -------- | --------------------------------- |
-| 浅拷贝   | `{ ...obj }` / `[...arr]`        |
-| 合并     | `{ ...a, ...b }` / `[...a, ...b]`|
+| 场景     | 示例                                     |
+| -------- | ---------------------------------------- |
+| 浅拷贝   | `{ ...obj }` / `[...arr]`                |
+| 合并     | `{ ...a, ...b }` / `[...a, ...b]`        |
 | 函数参数 | `fn(...args)` / `function f(...args) {}` |
 
 ## Symbol
@@ -77,58 +80,130 @@ const { name: userName = 'anonymous' } = obj
 
 ## Map / Set / WeakMap / WeakSet
 
-| 类型       | 键类型     | 可遍历 | 弱引用 | 典型用途           |
-| ---------- | ---------- | ------ | ------ | ------------------ |
-| `Map`      | 任意       | 是     | 否     | 键值对集合         |
-| `Set`      | —          | 是     | 否     | 去重、成员检测     |
-| `WeakMap`  | 仅对象     | 否     | 是     | 关联私有数据       |
-| `WeakSet`  | 仅对象     | 否     | 是     | 标记已处理对象     |
+| 类型      | 键类型 | 可遍历 | 弱引用 | 典型用途       |
+| --------- | ------ | ------ | ------ | -------------- |
+| `Map`     | 任意   | 是     | 否     | 键值对集合     |
+| `Set`     | —      | 是     | 否     | 去重、成员检测 |
+| `WeakMap` | 仅对象 | 否     | 是     | 关联私有数据   |
+| `WeakSet` | 仅对象 | 否     | 是     | 标记已处理对象 |
+
+### Set 与 WeakSet
+
+- `WeakSet` 的成员只能是`对象`和`Symbol`值，而不能是其他类型的值。
+- `WeakSet` 中的对象都是`弱引用`，可以被垃圾回收机制回收。
+- ES6 规定 `WeakSet` 不可遍历。
+
+📚 Set 与 WeakSet 区别
+
+| 特性      | Set                | WeakSet                   |
+| --------- | ------------------ | ------------------------- |
+| 值类型    | 任意类型           | 仅对象和Symbol            |
+| 引用类型  | 强引用             | 弱引用                    |
+| 可迭代    | ✅                 | ❌                        |
+| 可遍历    | ✅                 | ❌                        |
+| size 属性 | ✅                 | ❌                        |
+| 主要用途  | 数组去重、数据存储 | 存储DOM节点，防止内存泄漏 |
+
+### Map 与 WeakMap
+
+- `WeakMap` 只接受`对象`（`null`除外）和 `Symbol` 值作为键名，不接受其他类型的值作为键名。
+- `WeakMap` 的键名所指向的对象（弱引用），不计入垃圾回收机制。
+- 无遍历操作、无`size`属性
+
+📚 Map 与 WeakMap 区别
+
+| 特性      | Map              | WeakMap                         |
+| --------- | ---------------- | ------------------------------- |
+| 键类型    | 任意类型         | 仅对象和Symbol                  |
+| 值类型    | 任意类型         | 任意类型                        |
+| 引用类型  | 强引用           | 弱引用（针对键名）              |
+| 可迭代    | ✅               | ❌                              |
+| 可遍历    | ✅               | ❌                              |
+| size 属性 | ✅               | ❌                              |
+| 主要用途  | 缓存、存储键值对 | 存储私有数据，或与DOM关联的数据 |
+
+<Callout type="warn" title="注意">
+  `WeakMap` 弱引用的只是键名，而不是键值，键值依然是正常引用。
+</Callout>
+
+## （?.）与（??）
+
+- 链判断运算符（`?.`）：判断属性的上层对象是否存在
+- Null 判断运算符（`??`）：判断 `null` 或 `undefined`
 
 ## Promise
 
-### 三种状态
+### 3 种状态
 
-```
-pending → fulfilled（resolved）
-pending → rejected
+```sh
+            resolve(value)
+Pending ➖➖➖➖➖➖➖➖➖ ► Fulfilled（已完成）
+  │
+  │
+  │  reject(reason)
+  │
+  ▼ Rejected（已拒绝）
+
+状态一旦改变就不可逆：仅 2 条路径
+- Pending → Fulfilled
+- Pending → Rejected
 ```
 
+<Callout type="warn" title="状态改变规则">
 状态一旦变更不可逆。
+</Callout>
+
+### async/await
+
+- 本质：是 `Promise` 的语法糖。
+- 核心作用：将`异步代码写成同步风格/形式`，但底层仍然是 `Promise` 的回调链。
 
 ### 核心方法
 
-| 方法              | 用途                                |
-| ----------------- | ----------------------------------- |
-| `Promise.all`     | 全部成功才成功，一个失败即失败      |
-| `Promise.allSettled` | 等全部完成，不关心成功/失败      |
-| `Promise.race`    | 取第一个完成的（无论成功/失败）     |
-| `Promise.any`     | 取第一个成功的，全部失败才失败      |
+| 方法                 | 用途                            |
+| -------------------- | ------------------------------- |
+| `Promise.all`        | 全部成功才成功，一个失败即失败  |
+| `Promise.allSettled` | 等全部完成，不关心成功/失败     |
+| `Promise.race`       | 取第一个完成的（无论成功/失败） |
+| `Promise.any`        | 取第一个成功的，全部失败才失败  |
 
 ### 链式调用
 
 ```js
 fetch(url)
-  .then(res => res.json())
-  .then(data => process(data))
-  .catch(err => console.error(err))
-  .finally(() => cleanup())
+  .then((res) => res.json())
+  .then((data) => process(data))
+  .catch((err) => console.error(err))
+  .finally(() => cleanup());
 ```
+### 常见面试追问
+
+| 问题                                    | 答案                                                                               |
+| --------------------------------------- | ---------------------------------------------------------------------------------- |
+| Promise 解决了什么？                    | 解决了`回调地狱`的`嵌套`和`错误传递`问题                                                 |
+| Promise 能取消吗？                      | 不能。Promise 规范本身无取消机制；`AbortController` 是 Web API                     |
+| `.then` 里 `return` 普通值会怎样？      | 自动包装为 `Promise.resolved`，传给下一个 `.then`                                  |
+| `.then` 里 `return` 一个Promise？ | 外层 Promise 会`等待内层 Promise 状态变更`，然后`采用其值`，传递给下一个 `.then`。 |
+| `.then` 里 `throw` 会怎样？             | 转为 `rejected`，被最近的 `.catch` 捕获                                            |
+| `.catch` 后还能 `.then` 吗？            | 可以。`.catch` 内未再 throw 时返回 `Promise.resolved`，链式继续                    |
+| `resolve()` / `reject()` 后执行谁？     | `resolve` → 下一个 `.then`；`reject` → 下一个 `.catch`                             |
+| `Promise.all` 一个失败怎么办？          | 立即 `rejected`；若需容错，换 `Promise.allSettled` 或单独 `.catch`                 |
 
 ## Proxy / Reflect
 
 ```js
 const handler = {
   get(target, key) {
-    console.log(`读取 ${String(key)}`)
-    return Reflect.get(target, key)
+    console.log(`读取 ${String(key)}`);
+    return Reflect.get(target, key);
   },
   set(target, key, value) {
-    console.log(`设置 ${String(key)} = ${value}`)
-    return Reflect.set(target, key, value) // 返回 boolean
-  }
-}
+    console.log(`设置 ${String(key)} = ${value}`);
+    return Reflect.set(target, key, value); // 返回 boolean
+  },
+};
 
-const proxy = new Proxy(obj, handler)
+const proxy = new Proxy(obj, handler);
 ```
 
 - `Proxy` 拦截 13 种操作（`get`/`set`/`has`/`deleteProperty`/`ownKeys` 等）
@@ -144,11 +219,11 @@ const proxy = new Proxy(obj, handler)
 
 ```js
 function* idMaker() {
-  let id = 0
-  while (true) yield id++
+  let id = 0;
+  while (true) yield id++;
 }
-const gen = idMaker()
-gen.next() // { value: 0, done: false }
+const gen = idMaker();
+gen.next(); // { value: 0, done: false }
 ```
 
 - `yield` 暂停执行，`next()` 恢复
@@ -156,10 +231,10 @@ gen.next() // { value: 0, done: false }
 
 ## 模块化
 
-| 规范      | 语法                        | 加载方式   |
-| --------- | --------------------------- | ---------- |
-| CommonJS  | `require` / `module.exports`| 同步       |
-| ES Module | `import` / `export`         | 异步/静态  |
+| 规范      | 语法                         | 加载方式  |
+| --------- | ---------------------------- | --------- |
+| CommonJS  | `require` / `module.exports` | 同步      |
+| ES Module | `import` / `export`          | 异步/静态 |
 
 ### 核心差异
 

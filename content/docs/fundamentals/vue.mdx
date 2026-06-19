@@ -5,56 +5,205 @@ icon: Layers
 ---
 
 <Callout type="info">
-Vue 面试常考两件事：1) 机制原理（响应式、虚拟 DOM、编译优化）；2) 实战踩坑（为什么 data 是函数、nextTick 为什么不能同步读 DOM）。把原理 + 场景一起说才有说服力。
+  Vue 面试常考两件事：1) 机制原理（响应式、虚拟 DOM、编译优化）；2)
+  实战踩坑（为什么 data 是函数、nextTick 为什么不能同步读 DOM）。把原理 +
+  场景一起说才有说服力。
 </Callout>
 
 ## 组件与插件
 
-| 维度     | 组件 (Component)          | 插件 (Plugin)                |
-| -------- | ------------------------- | ----------------------------- |
-| 作用     | 构建 UI 片段              | 扩展 Vue 全局功能            |
-| 目标     | App.vue                   | Vue 本身                     |
-| 注册     | 局部 / 全局               | `app.use(plugin)`            |
-| 编写形式 | `.vue` 文件               | 暴露 `install` 方法          |
+| 维度     | 组件 (Component) | 插件 (Plugin)       |
+| -------- | ---------------- | ------------------- |
+| 作用     | 构建 UI 片段     | 扩展 Vue 全局功能   |
+| 目标     | App.vue          | Vue 本身            |
+| 注册     | 局部 / 全局      | `app.use(plugin)`   |
+| 编写形式 | `.vue` 文件      | 暴露 `install` 方法 |
 
 ### 插件 install 核心对照
 
-| 功能           | Vue 2 写法                    | Vue 3 写法                       |
-| -------------- | ----------------------------- | -------------------------------- |
-| 全局属性/方法  | `Vue.prototype.$xxx`          | `app.config.globalProperties.$xxx` |
-| 全局组件       | `Vue.component()`             | `app.component()`                |
-| 全局指令       | `Vue.directive()`             | `app.directive()`                |
-| provide/inject | 手动实现                      | `app.provide()` 原生支持         |
+| 功能           | Vue 2 写法           | Vue 3 写法                         |
+| -------------- | -------------------- | ---------------------------------- |
+| 全局属性/方法  | `Vue.prototype.$xxx` | `app.config.globalProperties.$xxx` |
+| 全局组件       | `Vue.component()`    | `app.component()`                  |
+| 全局指令       | `Vue.directive()`    | `app.directive()`                  |
+| provide/inject | 手动实现             | `app.provide()` 原生支持           |
 
 <Callout type="warn">
-Vue 3 插件注册必须在 `app.mount()` 之前，否则不生效。
+  Vue 3 插件注册必须在 `app.mount()` 之前，否则不生效。
 </Callout>
 
 ## 生命周期
 
 ### Vue 2
 
-| 钩子           | 可访问 data | 可操作 DOM | 适用场景                       |
-| -------------- | ----------- | ---------- | ------------------------------ |
-| `created`      | 是          | 否         | 数据请求、初始化               |
-| `mounted`      | 是          | 是         | DOM 操作、第三方库初始化       |
-| `updated`      | 是          | 是         | 操作更新后的 DOM               |
-| `beforeDestroy`| 是          | 是         | 清理定时器、移除监听（最重要） |
+| 钩子            | 可访问 data | 可操作 DOM | 适用场景                       |
+| --------------- | ----------- | ---------- | ------------------------------ |
+| `beforeCreate`  | 否          | 否         | 初始化前（几乎不用）           |
+| `created`       | 是          | 否         | 数据请求、初始化               |
+| `beforeMount`   | 是          | 否         | 挂载前的最后数据修改           |
+| `mounted`       | 是          | 是         | DOM 操作、第三方库初始化       |
+| `beforeUpdate`  | 是          | 是         | 更新前获取旧 DOM 状态          |
+| `updated`       | 是          | 是         | 操作更新后的 DOM               |
+| `beforeDestroy` | 是          | 是         | 清理定时器、移除监听（最重要） |
+| `destroyed`     | 是          | 否         | 清理完成的通知                 |
+| `activated`     | 是          | 是         | keep-alive 激活                |
+| `deactivated`   | 是          | 是         | keep-alive 失活                |
+| `errorCaptured` | 是          | 是         | 捕获子组件错误                 |
 
 ### Vue 3
 
-| Options API      | Composition API    | 适用场景                       |
-| ---------------- | ------------------ | ------------------------------ |
-| `beforeMount`    | `onBeforeMount`    | 最后的数据修改                 |
-| `mounted`        | `onMounted`        | DOM 操作、第三方库初始化       |
-| `beforeUnmount`  | `onBeforeUnmount`  | 清理资源（最重要）             |
-| `unmounted`      | `onUnmounted`      | 清理完成的通知                 |
+| Options API       | Composition API     | 适用场景                         |
+| ----------------- | ------------------- | -------------------------------- |
+| `beforeCreate`    | `setup()`           | 初始化前（几乎不用，setup 替代） |
+| `created`         | `setup()`           | 数据请求、初始化（setup 替代）   |
+| `beforeMount`     | `onBeforeMount`     | 挂载前的最后数据修改             |
+| `mounted`         | `onMounted`         | DOM 操作、第三方库初始化         |
+| `beforeUpdate`    | `onBeforeUpdate`    | 更新前获取旧 DOM 状态            |
+| `updated`         | `onUpdated`         | 操作更新后的 DOM                 |
+| `beforeUnmount`   | `onBeforeUnmount`   | 清理资源（最重要）               |
+| `unmounted`       | `onUnmounted`       | 清理完成的通知                   |
+| `activated`       | `onActivated`       | keep-alive 激活                  |
+| `deactivated`     | `onDeactivated`     | keep-alive 失活                  |
+| `errorCaptured`   | `onErrorCaptured`   | 捕获子组件错误                   |
+| `renderTracked`   | `onRenderTracked`   | 调试用，追踪响应式依赖（dev）    |
+| `renderTriggered` | `onRenderTriggered` | 调试用，追踪重渲染触发（dev）    |
 
-### keep-alive 缓存组件
+<Callout type="info" title="keep-alive 缓存组件">
+  - 首次进入：`created → mounted → activated` - 再次进入：`activated`（不经过
+  created/mounted） - 失活：`deactivated`（不经过 destroy）
+</Callout>
 
-- 首次进入：`created → mounted → activated`
-- 再次进入：`activated`（不经过 created/mounted）
-- 失活：`deactivated`（不经过 destroy）
+## 虚拟 DOM
+
+### 概念
+
+- `真实 DOM`：浏览器中渲染的实际节点对象，直接操作开销大。
+- `虚拟 DOM`：虚拟 DOM 是真实 DOM 的 JS 对象映射。
+
+📙 `虚拟 DOM`的核心价值
+
+<Callout>
+  当数据变更时，通过新旧两棵虚拟 DOM 树的 Diff
+  算法，计算出最小差异，再批量应用到真实 DOM 上，以此减少昂贵的 DOM 操作。
+</Callout>
+
+### 渲染流程
+
+```sh
+模板/渲染函数
+  ↓
+编译器 compile()
+  ↓
+渲染函数 render()
+  ↓
+创建 VNode（虚拟 DOM 节点）
+  ↓
+渲染器 renderer
+  ↓  首次渲染
+创建真实 DOM（mount）
+  ↓  后续更新
+Diff 新旧 VNode → 生成补丁（patch）
+  ↓
+最小化更新真实 DOM
+```
+
+## Diff 算法
+
+<Callout type="info" title="概念">
+  Diff 算法是同层级比较新旧 VNode 子节点的算法，找出最小差异，再批量更新到真实
+  DOM。 - Vue2 用双端比较（头头、尾尾、头尾、尾头） - Vue3 用快速 Diff (Fast
+  Diff) + 最长递增子序列。
+</Callout>
+
+## 编译优化
+
+<Callout>
+  Vue 3 编译器在编译期分析模板，生成带优化标记的渲染函数，减少运行时开销。
+</Callout>
+
+| 优化手段     | 原理                          | 收益               |
+| ------------ | ----------------------------- | ------------------ |
+| 静态提升     | 不变节点只创建一次            | 减少创建/对比开销  |
+| 补丁标记     | 位标记仅 `diff` 动态部分      | 跳过静态节点       |
+| 块级树       | 扁平化动态子节点列表          | O(全部) → O(动态)  |
+| 事件缓存     | 缓存事件处理函数引用          | 避免子组件无效更新 |
+| 静态属性提升 | 不变的 `props` 对象只创建一次 | 减少对象创建       |
+
+## 组合式函数（Composables）
+
+### 概念
+
+<Callout title="组合式函数">
+  组合式函数(Composables) 是一个利用 Vue 的`组合式 API`
+  来封装和复用`有状态逻辑`的函数。
+</Callout>
+
+### 约定和最佳实践
+
+- 命名​：约定用`驼峰命名法`命名，并以 `use` 作为开头。
+- 返回值（推荐）：**始终返回一个包含多个 ref 的普通的非响应式对象**。
+- 使用限制：只能在 `<script setup>` 或 `setup()` 钩子中被调用（它们也只能被`同步`调用）
+
+### Composables vs mixins
+
+| 维度             | Mixin（混入）                                                                  | Composables（组合式函数）              |
+| ---------------- | ------------------------------------------------------------------------------ | -------------------------------------- |
+| **数据来源追溯** | 多个 mixin 的属性合并到组件实例，来源不清，<br/>追溯实现和理解组件行为变得困难 | 显式解构赋值，属性来自哪个函数一目了然 |
+| **命名冲突**     | 多 mixin 可能注册同名属性，造成冲突，排查困难                                  | 解构时可重命名，编译阶段即可避免       |
+| **隐式耦合**     | 多个 mixin 通过共享属性名通信，使它们隐性地耦合在一起                          | 函数传参调用，依赖关系显式声明         |
+| **类型支持**     | 弱，实例上的属性难以推导                                                       | 强，TS 类型自动推导                    |
+| **Tree Shaking** | 不支持                                                                         | 支持，按需引入                         |
+| **代码组织**     | 按选项分散（data/methods/watch）                                               | 按功能聚合在一起                       |
+
+<Callout title="Vue2 对 Mixin中同名的实际处理机制">
+
+📙 同名处理机制
+
+- 同名 `生命周期钩子`会合并为数组，依次执行（mixin 的先执行，组件自身的后执行）
+- 同名 `data/props/methods/computed` 等，`组件自身的优先级高于 mixin（即组件自身的覆盖 mixin 的，只保留一个）`
+- 多个 mixin 之间的同名属性，`后注册的覆盖先注册的`
+
+📚 表格总结
+
+| 类型                 | 处理方式                                   | 执行顺序 / 优先级    |
+| -------------------- | ------------------------------------------ | -------------------- |
+| **生命周期钩子**     | 合并为数组，依次调用（非生命周期触发多次） | mixin 先 → 组件后    |
+| **data/props**       | 组件覆盖 mixin                             | 组件优先，只保留一个 |
+| **methods/computed** | 组件覆盖 mixin                             | 组件优先，只保留一个 |
+| **watch**            | 合并为数组，依次调用（非 watch 触发多次）  | mixin 先 → 组件后    |
+
+⚠ 注意事项（合并机制）
+
+- 生命周期钩子：生命周期钩子中的`函数体`合并为数组，生命周期`只触发一次`，仅会依次调用合并后数组里的`函数体`。
+- watch：`watch`中的`副作用内容`合并为数组，`watch只触发一次`，仅依次调用合并后数组里的`副作用内容`。
+
+</Callout>
+
+## 代码组织顺序
+
+```ts
+imports（导入）
+  ↓
+defineOptions（组件选项：name、inheritAttrs 等）
+  ↓
+interface / type（局部类型声明）
+  ↓
+defineProps / defineEmits / defineSlots（组件契约）
+  ↓
+composables（useXxx 组合式函数）
+  ↓
+state（ref / reactive 变量定义）
+  ↓
+computed（计算属性）
+  ↓
+functions（事件处理、业务方法）
+  ↓
+watch / watchEffect（侦听器）
+  ↓
+lifecycle（onMounted、onUnmounted 等）
+  ↓
+defineExpose（暴露给父组件的 API，放最后，一眼看出对外接口）
+```
 
 ## data 为什么是函数
 
@@ -62,19 +211,138 @@ Vue 3 插件注册必须在 `app.mount()` 之前，否则不生效。
 - **组件**：data 必须是函数（防止多个实例共享同一引用）
 
 <Callout>
-组件复用时，如果 data 是对象，所有实例引用同一份数据 → 数据污染。函数每次返回新对象，保证独立性。
+  组件复用时，如果 data 是对象，所有实例引用同一份数据 →
+  数据污染。函数每次返回新对象，保证独立性。
 </Callout>
+
+## methods 不能用箭头函数
+
+📚 this 指向问题（根本原因）
+
+- 是因为箭头函数的 `this` 指向定义时的外层作用域的 `this`，
+- 导致`无法正确指向 Vue 实例`，进而不能访问 `data`、`methods` 等组件属性。
+
+<Callout type="info" title="Vue 内部绑定机制">
+  - Vue 在实例化时，会遍历 `methods` 对象，用 `bind` 将每个方法的 `this` 绑定到
+  Vue 实例。 - 但箭头函数无法被 `bind` 改变 `this`，所以绑定失败
+</Callout>
+
+## v-for 中 key 的作用
+
+<Callout type="info" title="key 的作用">
+  key 是节点的唯一标识，帮助 Diff
+  算法`精准识别节点复用`，避免复用带来的渲染错误问题，同时提升更新效率。
+</Callout>
+
+## watch vs watchEffect
+
+1️⃣ 核心区别（极简版）
+
+| 维度       | watch          | watchEffect               |
+| ---------- | -------------- | ------------------------- |
+| 依赖收集   | 显式指定监听源 | 自动收集                  |
+| 默认执行   | 懒执行         | 立即执行                  |
+| 拿到旧值   | ✅             | ❌                        |
+| 控制精度   | 高             | 中                        |
+| 异步稳定性 | 更稳           | 有陷阱（仅跟踪 await 前） |
+
+2️⃣ `watchEffect` 高频追问速记
+
+- 为何立即执行？ → 为了`首次执行 + 依赖收集`。
+- 为什么触发过多？ → 回调中读到的`所有响应式数据`都会成为依赖。
+- 异步陷阱？ → 只跟踪 `await 之前`的依赖。
+- 连续请求污染咋办？ → 用 `onCleanup` 取消上一次的副作用。
+
+3️⃣ 使用场景
+
+- `watch`：需要旧值、明确指定监听源、复杂异步、延迟执行。
+- `watchEffect`：依赖多、自动跟踪、执行时响应式数据用到谁就监听谁、初始化执行。
+
+<Callout type="info" title="停止监听">
+`watch` 和 `watchEffect` 都返回一个停止函数，调用返回函数即可停止监听；
+在 `setup`/ `<script setup>` 中使用时，组件卸载会自动停止，通常无需手动处理。
+</Callout>
+
+## computed vs watch
+
+1️⃣ 核心区别（极简版）
+
+| 维度   | computed                                   | watch          |
+| ------ | ------------------------------------------ | -------------- |
+| 定位   | 派生新值                                   | 执行副作用     |
+| 返回值 | 有（计算结果）                             | 无（停止函数） |
+| 缓存   | 有（依赖项变化重新计算，否是返回缓存结果） | 无             |
+| 异步   | ❌ 不适合                                  | ✅ 适合        |
+| 副作用 | ❌ 不应有                                  | ✅ 专为其设计  |
+
+2️⃣ 使用场景
+
+- `computed`：模板加工、组合状态、过滤排序、状态派生、结果计算、表单校验。
+- `watch`：请求、缓存、路由联动、埋点、第三方实例操作。
+
+3️⃣ `computed` 和 `watch` 都能监听数据变化，怎么选择？
+
+- `computed`：用于`派生`数据，有返回值，可缓存计算结果。示例：fullName/totalPrice
+- `watch`：用于`副作用`，无返回值。示例：发请求/操作 DOM/路由跳转
+
+## computed vs methods
+
+- `computed` 基于响应式依赖派生出新状态，只有依赖变化时才重新计算，否则使用缓存。
+- `methods` 每次调用都会执行，无缓存机制。
+
+📚 computed vs methods（核心对比）
+
+| 对比维度         | computed                     | methods                    |
+| :--------------- | :--------------------------- | :------------------------- |
+| **缓存机制**     | ✅ 有缓存，依赖不变不重算    | ❌ 无缓存，每次调用都执行  |
+| **触发时机**     | 依赖的响应式数据变化时       | 调用时立即执行             |
+| **性能**         | 高（缓存减少无用计算）       | 低（频繁调用可能浪费性能） |
+| **是否支持传参** | ❌ 不支持                    | ✅ 支持                    |
+| **返回值**       | 必须返回一个值               | 可有可无                   |
+| **使用场景**     | 过滤排序、状态派生、结果计算 | 事件处理/复杂逻辑/传参计算 |
+
+## watch vs methods
+
+- `watch`：数据变化时自动触发
+- `methods`：每次调用都会触发
+
+📚 watch vs methods（核心对比）
+
+| 对比维度             | watch                       | methods                    |
+| :------------------- | :-------------------------- | :------------------------- |
+| **触发方式**         | 数据变化时自动触发          | 主动触发                   |
+| **执行时机**         | 数据变化后立即执行          | 调用时立即执行             |
+| **是否支持异步**     | ✅ 支持                     | ✅ 支持                    |
+| **是否支持深度监听** | ✅ 支持 `deep: true`        | ❌ 无此概念                |
+| **初始执行**         | ✅ 支持 `immediate: true`   | ❌ 无此概念                |
+| **使用场景**         | 数据变化后的副作用/异步请求 | 事件处理/复用逻辑/普通函数 |
+
+## computed/watch/methods
+
+| 对比维度               | computed                  | watch               | methods           |
+| :--------------------- | :------------------------ | :------------------ | :---------------- |
+| **是支持缓存**         | ✅ 是                     | ❌ 否               | ❌ 否             |
+| **触发方式**           | 自动（依赖变化）          | 自动（数据变化）    | 主动（调用）      |
+| **执行时机**           | 读取时/依赖项目变化是执行 | 数据变化时执行      | 调用时执行        |
+| **是否支持传参**       | ❌ 否                     | ❌ 否               | ✅ 是             |
+| **是否必须返回值**     | ✅ 是                     | ❌ 否               | ❌ 否             |
+| **是否适合异步**       | ❌ 否                     | ✅ 是               | ✅ 是             |
+| **是否支持 deep**      | ✅ 是（访问深层时自动）   | ✅ 是（手动配置）   | ❌ 否             |
+| **是否支持 immediate** | ❌ 否                     | ✅ 是               | ❌ 否             |
+| **典型场景**           | 模板计算/派生状态         | 数据变化副作用/请求 | 事件处理/复用逻辑 |
 
 ## 响应式原理
 
-### Vue 2：`Object.defineProperty`
+### Object.defineProperty
 
 - 初始化时遍历 `data` 的每个属性，添加 `getter/setter`
 - **无法监听新增属性** → 需要 `Vue.set()`
 - **无法监听 delete** → 需要 `Vue.delete()`
-- 数组需重写 `push/pop/splice` 等方法
+- **无法监听数组索引赋值** → 性能考虑，未对数组索引做劫持
+- **无法监听数组 length 变化** → `length` 不是响应式属性
+- vue2 重写了 `push`/`pop`/`shift`/`unshift`/`splice`/`sort`/`reverse` 七个方法
 
-### Vue 3：`Proxy`
+### Proxy
 
 - 代理整个对象，拦截所有操作
 - 自动监听新增属性和删除操作
@@ -83,7 +351,7 @@ Vue 3 插件注册必须在 `app.mount()` 之前，否则不生效。
 
 ### Vue 3 响应式流程
 
-```
+```text
 数据读取 (get)
   ↓
 track(target, key) — 收集 effect 到依赖 Map
@@ -97,49 +365,87 @@ trigger(target, key) — 找到并执行依赖中的 effect
 
 ## ref vs reactive
 
-| 特性       | `ref`               | `reactive`           |
-| ---------- | -------------------- | -------------------- |
-| 适用类型   | 基础 + 引用          | 仅对象               |
-| 访问方式   | `.value`             | 直接访问属性         |
-| 替换整体值 | 支持                 | 不支持（丢失代理）   |
-| 解构       | 安全                 | 丢失响应式           |
+| 特性       | `ref`       | `reactive`         |
+| ---------- | ----------- | ------------------ |
+| 适用类型   | 基础 + 引用 | 仅对象             |
+| 访问方式   | `.value`    | 直接访问属性       |
+| 替换整体值 | 支持        | 不支持（丢失代理） |
+| 解构       | 安全        | 丢失响应式         |
 
 <Callout>
-Vue 3.2+ 官方推荐**优先使用 ref**：统一 `.value` 语法，无解构丢失问题，适合整体替换。
+  Vue 3.2+ 官方推荐**优先使用 ref**：统一 `.value`
+  语法，无解构丢失问题，适合整体替换。
+</Callout>
+
+```ts
+const state = reactive({ name: "Tom", age: 18 });
+const { name, age } = state; // 丢失响应式
+const { name, age } = toRefs(state); // 每个属性变成 ref，保持响应式
+```
+
+<Callout type="warn" title="ref 与 reactive 的解构">
+  - `reactive` 解构后丢失响应式！用 `toRefs()` 包装或改用 `ref`。 - Vue 3.5+
+  支持响应式 Props 解构，但仅限 `defineProps` 返回值，普通 `reactive` 仍需
+  `toRefs`。
+</Callout>
+
+## ref vs shallowRef
+
+```ts tab="ref（深层）"
+// ref — 深层响应，修改嵌套属性也触发更新
+const user = ref({ name: "John", profile: { age: 30 } });
+user.value.profile.age = 31; // 触发更新
+```
+
+```ts tab="shallowRef（浅层）"
+// shallowRef — 只追踪 .value 赋值，不追踪嵌套变化
+const data = shallowRef({ items: [] });
+data.value.items.push("new"); // 不触发更新！
+data.value = { items: ["new"] }; // 触发更新
+
+// 大型不可变数据推荐用 shallowRef，避免深层代理开销
+```
+
+<Callout title="ref 与 shallowRef 选择策略">
+  - **优先 `shallowRef`** 用于大型数据结构或不需要深层响应的场景。 - `ref`
+  对基础类型用类包装（`.value` 的 get/set），对对象类型内部调用 `reactive`。
 </Callout>
 
 ## v-show vs v-if
 
-| 维度       | `v-if`            | `v-show`          |
-| ---------- | ----------------- | ----------------- |
-| 控制       | 添加/删除 DOM     | `display: none`   |
-| 初始渲染   | 条件为真才渲染    | 总是渲染          |
-| 切换开销   | 高（重建 DOM）    | 低（切换样式）    |
-| 适用场景   | 条件很少变化      | 频繁切换          |
-| 生命周期   | 触发              | 不触发            |
+| 维度     | `v-if`         | `v-show`        |
+| -------- | -------------- | --------------- |
+| 控制     | 添加/删除 DOM  | `display: none` |
+| 初始渲染 | 条件为真才渲染 | 总是渲染        |
+| 切换开销 | 高（重建 DOM） | 低（切换样式）  |
+| 适用场景 | 条件很少变化   | 频繁切换        |
+| 生命周期 | 触发           | 不触发          |
 
 ## v-if 与 v-for 优先级
 
-| 版本  | 优先级          | 说明                     |
-| ----- | --------------- | ------------------------ |
-| Vue 2 | `v-for > v-if`  | 先遍历再判断              |
-| Vue 3 | `v-if > v-for`  | 先判断再遍历              |
+| 版本  | 优先级         | 说明         |
+| ----- | -------------- | ------------ |
+| Vue 2 | `v-for > v-if` | 先遍历再判断 |
+| Vue 3 | `v-if > v-for` | 先判断再遍历 |
 
 <Callout type="warn">
-不要在同一元素上使用 `v-if` 和 `v-for`。用 `computed` 过滤列表或将 `v-if` 移到外层。
+  不要在同一元素上使用 `v-if` 和 `v-for`。用 `computed` 过滤列表或将 `v-if`
+  移到外层。
 </Callout>
 
 ## nextTick
 
-Vue 的响应式更新是**异步批处理**的——数据变化后不会立即更新 DOM。
+### 概念
+
+`nextTick` 是 Vue 提供的 `异步 DOM 更新机制`，**用于在下次 DOM 更新循环结束后执行回调**，确保能获取到更新后的 DOM。
 
 ```js
-msg.value = 'Vue3 NextTick!'
-console.log(box.value?.textContent) // 可能是旧值
+msg.value = "Vue3 NextTick!";
+console.log(box.value?.textContent); // 可能是旧值
 
 nextTick(() => {
-  console.log(box.value?.textContent) // 确保拿到新值
-})
+  console.log(box.value?.textContent); // 确保拿到新值
+});
 ```
 
 ### 使用场景
@@ -148,71 +454,462 @@ nextTick(() => {
 - `v-if` 创建元素后初始化第三方库
 - 动态显示输入框后设置焦点
 
+## 内置组件
+
+### KeepAlive
+
+```vue
+<KeepAlive :include="['UserList', 'Settings']" :max="10">
+  <component :is="currentTab" />
+</KeepAlive>
+```
+
+- 缓存组件实例，避免重复创建/销毁
+- 生命周期：`onActivated` / `onDeactivated`
+- `include` / `exclude`：支持字符串、正则、数组
+- `max`：最大缓存数，超出用 LRU 淘汰
+
+### Teleport
+
+将一个组件内部的一部分模板“传送”到该组件的 DOM 结构外层的位置去。
+
+```vue
+<Teleport to="body" :disabled="isMobile" defer>
+  <!-- defer (3.5+): 延迟到目标挂载后再传送 -->
+  <div class="modal">...</div>
+</Teleport>
+```
+
+### Suspense
+
+<Callout type="info" title="实验性功能">
+`<Suspense>` 是一项实验性功能。用来在组件树中协调对异步依赖的处理。
+- 等待异步依赖：`async setup()` 或 `<script setup>` 中顶层 `await`
+- 实验性 API，API 可能变动
+</Callout>
+
+```vue
+<Suspense @pending @resolve @fallback>
+  <template #default>
+    <AsyncComponent />
+  </template>
+  <template #fallback>
+    <Spinner />
+  </template>
+</Suspense>
+```
+
+### Transition / TransitionGroup
+
+<Callout type="info" title="定义">
+- `<Transition>`会在一个元素或组件`进入`和`离开` DOM 时应用动画。
+- `<TransitionGroup>`会在一个 v-for 列表中的元素或组件被`插入`、`移动`、`移除`，时应用动画。
+</Callout>
+
+| 类名                  | 时机         |
+| --------------------- | ------------ |
+| `{name}-enter-from`   | 进入起始状态 |
+| `{name}-enter-active` | 进入激活状态 |
+| `{name}-enter-to`     | 进入结束状态 |
+| `{name}-leave-from`   | 离开起始状态 |
+| `{name}-leave-active` | 离开激活状态 |
+| `{name}-leave-to`     | 离开结束状态 |
+
+```vue
+<!-- 模式切换 -->
+<Transition name="fade" mode="out-in">
+  <component :is="currentView" />
+</Transition>
+
+<!-- 首次渲染动画 -->
+<Transition appear name="fade">
+  <div>初始渲染也有过渡</div>
+</Transition>
+
+<!-- 列表过渡 -->
+<TransitionGroup name="list" tag="ul">
+  <li v-for="item in items" :key="item.id">{{ item.text }}</li>
+</TransitionGroup>
+```
+
+## 内置指令
+
+### v-memo 与 v-once
+
+<Callout type="info" title="内置指令">
+  - v-memo：通过`缓存`来跳过不必要的组件更新，从而优化性能。 -
+  v-once：仅渲染元素和组件一次，并跳过之后的更新。
+</Callout>
+
+```vue
+<!-- v-memo: 依赖不变则跳过更新 -->
+<div v-for="item in list" :key="item.id" v-memo="[item.selected]">
+  <ExpensiveComponent :item="item" />
+</div>
+
+<!-- v-once: 只渲染一次，后续跳过 -->
+<span v-once>静态: {{ initialValue }}</span>
+
+<!-- v-memo="[]" 等价于 v-once -->
+<div v-memo="[]">永不更新</div>
+```
+
 ## 组件间通信
 
-| 方式           | Vue 2              | Vue 3               | 核心差异               |
-| -------------- | ------------------ | -------------------- | ---------------------- |
-| 父 → 子        | `props`            | `defineProps`        | TS 类型推导更强        |
-| 子 → 父        | `$emit`            | `defineEmits`        | 需提前声明             |
-| 双向绑定       | `v-model` + `.sync`| `v-model`（多个）    | 更统一                 |
-| 事件总线       | `EventBus`         | `mitt`               | Vue3 移除实例事件方法  |
-| 跨级状态       | `Vuex`             | `Pinia`              | 更轻量，TS 原生        |
-| 跨级注入       | `provide/inject`   | `ref/reactive` 响应式| 自动响应式             |
-| 获取子实例     | `$refs`            | `ref` + `defineExpose`| 需显式暴露             |
+1️⃣ 父子组件
+
+- 父子通信：父 -> 子（`props`），子 -> 父（`emit`）
+- 双向绑定：`v-model`
+- 传结构或模板：`slot`
+- 调子组件方法：`ref + defineExpose`
+
+2️⃣ 祖孙/跨多层组件
+
+- 跨层共享上下文：`provide / inject`
+- 组件透传属性和事件：`$attrs`
+
+3️⃣ 兄弟组件
+
+- 共享业务状态：`Pinia / Vuex`
+- 只是通知：`mitt`
+
+4️⃣ 跨标签页/iframe/浏览器上下文
+
+- `BroadcastChannel`
+- `postMessage`
+- `storage`
 
 ## Vue Router
 
-### hash vs history 模式
-
-| 维度       | hash 模式                | history 模式               |
-| ---------- | ------------------------ | -------------------------- |
-| URL 样式   | `http://xxx/#/path`      | `http://xxx/path`          |
-| 原理       | `hashchange` 事件        | `pushState/replaceState`   |
-| 服务器配置 | 无需                    | 需配置（否则刷新 404）     |
-| SEO        | 不利                    | 友好                       |
-
 ### 导航守卫
 
-| 类型     | 守卫                                       |
-| -------- | ------------------------------------------ |
-| 全局     | `beforeEach` / `beforeResolve` / `afterEach` |
-| 路由独享 | `beforeEnter`                              |
-| 组件内   | `beforeRouteEnter` / `beforeRouteUpdate` / `beforeRouteLeave` |
+| 类型         | 守卫                                                          |
+| ------------ | ------------------------------------------------------------- |
+| 全局前置守卫 | `beforeEach`                                                  |
+| 全局解析守卫 | `beforeResolve`                                               |
+| 全局后置守卫 | `afterEach`                                                   |
+| 路由独享     | `beforeEnter`                                                 |
+| 组件内       | `beforeRouteEnter` / `beforeRouteUpdate` / `beforeRouteLeave` |
+
+### 路由传参
+
+- `path`+ `query` 传参: 在浏览器地址栏中显示参数，类似`get`传参
+- `name` + `params` 传参: 在浏览器地址栏中不显示参数，类似`post`传参
+
+<Callout type="warn" title="注意事项">
+  - 刷新：不会丢失 `query` 里面的数据 - 刷新：会丢失 `params` 里面的数据
+</Callout>
+
+### $route 和 $router
+
+| 维度         | `$route`                              | `$router`                        |
+| ------------ | ------------------------------------- | -------------------------------- |
+| **本质**     | 当前激活的路由**信息对象**            | 整个路由**实例**                 |
+| **属性**     | `path`/`params`/`query`/`name`/`meta` | `push`/`replace`/`go`/`addRoute` |
+| **职责**     | 只读，获取当前路由状态                | 读写，控制路由跳转               |
+| **是否可变** | 每次导航产生新对象                    | 全局唯一实例                     |
+
+### 动态路由+路由权限
+
+📚 常见的三种实现方案
+
+| 方案                          | 核心思路                                                          | 适用场景             |
+| ----------------------------- | ----------------------------------------------------------------- | -------------------- |
+| **① 后端返回完整路由**        | 后端存路由配置，前端 `import.meta.glob` 映射组件，`addRoute` 注册 | 权限频繁变动的中后台 |
+| **② 前端全量路由 + 权限过滤** | 前端定义全部路由 + `meta.roles`，后端返回角色标识过滤             | 角色固定/页面少      |
+| **③ 公共路由 + 后端菜单**     | 公共路由内置在前端，业务路由后端返回动态追加                      | 多角色/公共页面统一  |
+
+1️⃣ 方案一：后端返回完整路由
+
+```
+登录 → 获取 Token → 请求后端菜单接口 → 后端返回树形路由结构 → 通过 addRoute 动态注册路由
+```
+
+- **原理**：后端存储路由配置（path、component、meta），前端拿字符串路径通过 `import.meta.glob` 映射为组件
+- **优点**：权限完全由后端控制，前端改动少，角色/菜单变更无需发版
+- **缺点**：前后端需约定 component 命名规范，新增页面需后端同步配置
+- **适用**：菜单结构复杂、权限变动频繁的中后台系统
+
+2️⃣ 方案二：前端全量路由 + 后端返回权限标识过滤
+
+```
+登录 → 获取角色/权限标识 → 前端全量路由按 meta.roles 过滤 → 动态注册 → 渲染菜单
+```
+
+- **原理**：前端定义全部路由，每条路由标注 `meta.roles`，后端只返回用户拥有的权限/角色编码，前端按编码过滤
+- **优点**：路由配置集中在前端，后端只需管角色分配；路由跳转逻辑更直观
+- **缺点**：新增页面需前端编码+发版；权限粒度为角色级，颗粒度粗
+- **适用**：角色固定、页面较少的管理系统
+
+3️⃣ 方案三：公共路由 + 后端返回菜单路由
+
+```
+登录 → 初始化前端公共路由（内置） → 请求菜单接口 → 后端返回动态路由部分 → 通过 addRoute 动态注册路由
+```
+
+- **原理**：`createRouter` 时注册公共路由（静态），守卫中请求后端获取用户专属路由，追加注册
+- **优点**：公共页面不受权限影响（如首页、404），仅业务路由动态
+- **缺点**：与方案一类似，需后端同步路由配置
+- **适用**：多角色但公共页面统一的系统
+
+📙 方案对比
+
+| 维度         | 后端路由               | 前端过滤                     | 混合模式            |
+| ------------ | ---------------------- | ---------------------------- | ------------------- |
+| 路由配置存放 | 后端数据库             | 前端代码                     | 公共前端 + 业务后端 |
+| 菜单变更成本 | 改数据库即生效         | 前端改代码+发版              | 公共发版，业务改库  |
+| 权限粒度     | 菜单+按钮级            | 路由+角色级                  | 菜单+按钮级         |
+| 安全性       | 高（无权限路由不注册） | 中（路由仍注册，靠守卫拦截） | 高                  |
+| 实施复杂度   | 中（需约定组件映射）   | 低                           | 中                  |
+
+### hash vs history 模式
+
+| 维度       | hash 模式           | history 模式             |
+| ---------- | ------------------- | ------------------------ |
+| URL 样式   | `http://xxx/#/path` | `http://xxx/path`        |
+| 原理       | `hashchange` 事件   | `pushState/replaceState` |
+| 服务器配置 | 无需                | 需配置（否则刷新 404）   |
+| SEO        | 不利                | 友好                     |
 
 ## Vuex vs Pinia
 
-| 特性         | Vuex                    | Pinia                   |
-| ------------ | ----------------------- | ----------------------- |
-| Mutation     | 必须有，同步修改        | 已移除，Action 统一处理 |
-| 模块化       | 嵌套 modules            | 平铺独立 store          |
-| TS 支持      | 较弱                    | 原生支持                |
-| 动态注册     | 需手动                  | 默认动态                |
+| 特性     | Vuex             | Pinia                   |
+| -------- | ---------------- | ----------------------- |
+| Mutation | 必须有，同步修改 | 已移除，Action 统一处理 |
+| 模块化   | 嵌套 modules     | 平铺独立 store          |
+| TS 支持  | 较弱             | 原生支持                |
+| 动态注册 | 需手动           | 默认动态                |
 
-### Pinia 核心
+### Vuex
 
-- **State**：状态数据
-- **Getter**：派生状态
-- **Action**：同步 + 异步操作（不再区分 mutation）
+<Callout type="info" title="Vuex 核心">
+  - **State**：状态数据 - **Getter**：派生状态 - **Mutation**：修改 `State`
+  状态的唯一方法 - **Action**：同步 + 异步操作（提交 `Mutation`） -
+  **modules**：模块化
+</Callout>
 
-## SPA 首屏优化
 
-| 优化方向       | 方案                                   |
-| -------------- | -------------------------------------- |
-| 减小入口体积   | 路由懒加载                             |
-| 静态资源缓存   | HTTP 缓存 + Service Worker             |
-| UI 框架按需   | Tree Shaking / 自动导入                |
-| 图片优化       | WebP / 懒加载 / 响应式图片             |
-| GZip 压缩      | Nginx / CDN 开启                       |
-| SSR            | 服务端渲染首屏                         |
+```js tab="userStore.js"
+// store/user.js (Vuex 4)
+import { createStore } from "vuex";
+
+// 创建一个独立的模块（推荐）
+const userModule = {
+  // 1. State：相当于 Pinia 中的 ref 数据
+  state: () => ({
+    name: "Tom",
+  }),
+
+  // 2. Getters：相当于 Pinia 中的 computed
+  getters: {
+    isAdmin: (state) => state.name === "admin",
+  },
+
+  // 3. Mutations：同步修改 state 的唯一途径（必须同步）
+  mutations: {
+    SET_NAME(state, newName) {
+      state.name = newName;
+    },
+  },
+
+  // 4. Actions：处理异步或批量逻辑，最终调用 mutation
+  actions: {
+    // 相当于 Pinia 中的 login 方法
+    login({ commit }, newName) {
+      // 可在此添加异步逻辑，如 API 请求
+      // const data = await api.login(newName)
+      commit("SET_NAME", newName); // 提交 mutation 修改 state
+    },
+  },
+};
+
+// 创建 Store
+const store = createStore({
+  modules: {
+    user: userModule, // 注册模块
+  },
+});
+
+export default store;
+```
+
+```vue tab="选项式中使用"
+<template>
+  <div>
+    <p>用户名: {{ name }}</p>
+    <p>是否管理员: {{ isAdmin }}</p>
+    <button @click="login('admin')">登录</button>
+  </div>
+</template>
+
+<script>
+import { mapState, mapGetters, mapActions } from "vuex";
+
+export default {
+  computed: {
+    // 映射 state
+    ...mapState(["name"]),
+    // 映射 getters
+    ...mapGetters(["isAdmin"]),
+  },
+  methods: {
+    // 映射 actions（会自动 dispatch）
+    ...mapActions(["login"]),
+  },
+};
+</script>
+```
+
+```vue tab="在 setup 中使用"
+<template>
+  <div>
+    <!-- 通过 $store 访问 -->
+    <p>用户名: {{ $store.state.name }}</p>
+    <p>是否管理员: {{ $store.getters.isAdmin ? "是" : "否" }}</p>
+
+    <!-- 使用 computed 包装 -->
+    <p>用户名(computed): {{ userName }}</p>
+
+    <button @click="handleLogin">登录为 Admin</button>
+  </div>
+</template>
+
+<script setup>
+import { computed } from "vue";
+import { useStore } from "vuex";
+
+const store = useStore();
+
+// 需要用 computed 包裹才能保持响应式
+const userName = computed(() => store.state.name);
+const isAdmin = computed(() => store.getters.isAdmin);
+
+function handleLogin() {
+  // 调用 action（注意 dispatch）
+  store.dispatch("login", "admin");
+
+  // 或者直接提交 mutation（不推荐）
+  // store.commit('SET_NAME', 'admin')
+}
+</script>
+```
+
+### Pinia
+
+<Callout type="info" title="Pinia 核心">
+  - **State**：状态数据 - **Getter**：派生状态 - **Action**：同步 +
+  异步操作（不再区分 mutation）
+</Callout>
+
+```ts tab="useUserStore"
+export const useUserStore = defineStore("user", () => {
+  const name = ref("Tom");
+  const isAdmin = computed(() => name.value === "admin");
+
+  function login(newName: string) {
+    name.value = newName;
+  }
+
+  return { name, isAdmin, login };
+});
+```
+
+```ts tab="使用"
+const store = useUserStore();
+
+// ❌ 错误：直接解构会丢失响应式
+const { name } = store;
+
+// ✅ 正确：使用 storeToRefs 保持响应式
+const { name } = storeToRefs(store);
+
+// ✅ actions 可以直接解构（不需要 storeToRefs）
+const { login } = userStore;
+```
+
+### 核心区别速查表
+
+| 操作                | Pinia                           | Vuex 4                             |
+| :------------------ | :------------------------------ | :--------------------------------- |
+| **获取 store 实例** | `useUserStore()`                | `useStore()`                       |
+| **读取 state**      | `store.name`                    | `store.state.name`                 |
+| **读取 getter**     | `store.isAdmin`                 | `store.getters.isAdmin`            |
+| **解构保持响应式**  | 用 `storeToRefs`                | 用 `computed` 包裹                 |
+| **修改数据**        | `store.login('admin')`          | `store.dispatch('login', 'admin')` |
+| **映射辅助函数**    | `mapState(useUserStore, [...])` | `mapState(['name'])`               |
+
+## 性能优化
+
+### SPA 首屏优化
+
+| 优化方向     | 方案                       |
+| ------------ | -------------------------- |
+| 减小入口体积 | 路由懒加载                 |
+| 静态资源缓存 | HTTP 缓存 + Service Worker |
+| UI 框架按需  | Tree Shaking / 自动导入    |
+| 图片优化     | WebP / 懒加载 / 响应式图片 |
+| GZip 压缩    | Nginx / CDN 开启           |
+| SSR          | 服务端渲染首屏             |
+
+### 渲染优化
+
+| 手段              | 原理                        | 场景              |
+| ----------------- | --------------------------- | ----------------- |
+| `v-once`          | 只渲染一次，后续跳过        | 纯静态内容        |
+| `v-memo`          | 依赖不变则跳过更新          | 大列表 + 少量变化 |
+| `shallowRef`      | 只追踪 `.value`，不深层代理 | 大型不可变数据    |
+| `shallowReactive` | 只代理第一层                | 同上              |
+| `markRaw`         | 标记对象永不代理            | 第三方库实例      |
+| 虚拟滚动          | 只渲染可见区域              | 超长列表          |
+| 按需更新          | `key` + `PatchFlag`         | 编译器自动        |
+
+### 响应式开销控制
+
+```ts
+// 大型数据不需要深层响应式
+const bigList = shallowRef<Item[]>([]);
+
+// 第三方实例不需要代理
+const chart = markRaw(new Chart(element));
+
+// 读取原始对象（不触发依赖）
+const raw = toRaw(reactiveObj);
+```
+
+### 路由与组件懒加载
+
+```ts
+const routes = [
+  {
+    path: "/user",
+    component: () => import("./views/User.vue"), // 路由级懒加载
+  },
+];
+
+// 异步组件
+const AsyncComp = defineAsyncComponent(() => import("./HeavyChart.vue"));
+```
+
+## 常见误区
+
+| 误区                          | 正解                                                            |
+| ----------------------------- | --------------------------------------------------------------- |
+| `reactive` 解构后还是响应式   | 解构丢失代理，用 `toRefs` 或改用 `ref`                          |
+| `computed` 可以替代 `watch`   | `computed` 是纯派生，`watch` 是副作用                           |
+| `nextTick` 一定是微任务       | 实现取决于环境（`Promise` → `MutationObserver` → `setTimeout`） |
+| Vue 3 不需要 `key`            | 列表 `diff` 仍然需要 `key` 来识别节点                           |
+| `v-if` 和 `v-for` 可以同元素  | Vue 3 优先级变了但仍然不推荐，用 `computed`                     |
+| Pinia action 里不能异步       | Pinia action 天然支持 `async/await`                             |
+| `shallowRef` 修改嵌套值能触发 | 只追踪 `.value` 赋值，嵌套修改需替换整个值                      |
 
 ## Vue 设计模式
 
-| 模式       | Vue 应用                        | 重要程度 |
-| ---------- | ------------------------------- | -------- |
-| 观察者模式 | 响应式系统、watch、computed     | 核心     |
-| 代理模式   | Proxy 响应式、ref               | 核心     |
-| 组合模式   | 组件树、插槽                    | 核心     |
-| 工厂模式   | `createApp`、`h` 函数           | 重要     |
-| 策略模式   | `v-if/v-show`、过渡动画         | 重要     |
-| 发布订阅   | 事件总线、mitt                  | 重要     |
-| 单例模式   | Router、Store                   | 一般     |
+| 模式       | Vue 应用                    | 重要程度 |
+| ---------- | --------------------------- | -------- |
+| 观察者模式 | 响应式系统、watch、computed | 核心     |
+| 代理模式   | Proxy 响应式、ref           | 核心     |
+| 组合模式   | 组件树、插槽                | 核心     |
+| 工厂模式   | `createApp`、`h` 函数       | 重要     |
+| 策略模式   | `v-if/v-show`、过渡动画     | 重要     |
+| 发布订阅   | 事件总线、mitt              | 重要     |
+| 单例模式   | Router、Store               | 一般     |

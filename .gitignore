@@ -23,12 +23,8 @@ yarn-error.log*
 # others
 .env*.local
 .vercel
-<<<<<<< HEAD
-next-env.d.ts
-=======
 next-env.d.ts
 
 # Claude Code 本地/敏感配置
-.claude/settings.local.json
-.mcp.json
->>>>>>> 64141f906f8a6b8fa93e38b51ceda90c77505ec1
+/.claude/settings.local.json
+/.claude/.mcp.json

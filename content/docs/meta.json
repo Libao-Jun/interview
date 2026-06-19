@@ -3,9 +3,8 @@
   "pages": [
     "index", 
     "guide", 
-    "example",
     "fundamentals", 
-    "frameworks", 
-    "engineering"
+    "engineering",
+    "example"
   ]
 }

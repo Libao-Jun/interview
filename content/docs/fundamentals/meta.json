@@ -1,14 +1,15 @@
 {
-  "title": "基础原理",
+  "title": "基础知识",
   "defaultOpen": true,
   "pages": [
     "index",
     "html",
     "es6",
-    "css",
-    "vue",
     "javascript",
     "typescript",
+    "css",
+    "vue",
+    "react",
     "network",
     "browser"
   ]
