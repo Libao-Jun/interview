@@ -158,6 +158,7 @@ Diff 新旧 VNode → 生成补丁（patch）
 <Callout title="Vue2 对 Mixin中同名的实际处理机制">
 
 📙 同名处理机制
+
 - 同名 `生命周期钩子`会合并为数组，依次执行（mixin 的先执行，组件自身的后执行）
 - 同名 `data/props/methods/computed` 等，`组件自身的优先级高于 mixin（即组件自身的覆盖 mixin 的，只保留一个）`
 - 多个 mixin 之间的同名属性，`后注册的覆盖先注册的`
@@ -172,8 +173,10 @@ Diff 新旧 VNode → 生成补丁（patch）
 | **watch**            | 合并为数组，依次调用（非 watch 触发多次）  | mixin 先 → 组件后    |
 
 ⚠ 注意事项（合并机制）
+
 - 生命周期钩子：生命周期钩子中的`函数体`合并为数组，生命周期`只触发一次`，仅会依次调用合并后数组里的`函数体`。
-- watch：watch中的`副作用内容`合并为数组，watch`只触发一次`，仅依次调用合并后数组里的`副作用内容`。
+- watch：`watch`中的`副作用内容`合并为数组，`watch只触发一次`，仅依次调用合并后数组里的`副作用内容`。
+
 </Callout>
 
 ## 代码组织顺序
@@ -507,14 +510,14 @@ nextTick(() => {
 - `<TransitionGroup>`会在一个 v-for 列表中的元素或组件被`插入`、`移动`、`移除`，时应用动画。
 </Callout>
 
-| 类名                | 时机             |
-| ------------------- | ---------------- |
-| `{name}-enter-from` | 进入起始状态     |
-| `{name}-enter-active` | 进入激活状态   |
-| `{name}-enter-to`   | 进入结束状态     |
-| `{name}-leave-from` | 离开起始状态     |
-| `{name}-leave-active` | 离开激活状态   |
-| `{name}-leave-to`   | 离开结束状态     |
+| 类名                  | 时机         |
+| --------------------- | ------------ |
+| `{name}-enter-from`   | 进入起始状态 |
+| `{name}-enter-active` | 进入激活状态 |
+| `{name}-enter-to`     | 进入结束状态 |
+| `{name}-leave-from`   | 离开起始状态 |
+| `{name}-leave-active` | 离开激活状态 |
+| `{name}-leave-to`     | 离开结束状态 |
 
 ```vue
 <!-- 模式切换 -->
@@ -537,10 +540,9 @@ nextTick(() => {
 
 ### v-memo 与 v-once
 
-
 <Callout type="info" title="内置指令">
-- v-memo：通过`缓存`来跳过不必要的组件更新，从而优化性能。
-- v-once：仅渲染元素和组件一次，并跳过之后的更新。
+  - v-memo：通过`缓存`来跳过不必要的组件更新，从而优化性能。 -
+  v-once：仅渲染元素和组件一次，并跳过之后的更新。
 </Callout>
 
 ```vue
@@ -682,19 +684,172 @@ nextTick(() => {
 | TS 支持  | 较弱             | 原生支持                |
 | 动态注册 | 需手动           | 默认动态                |
 
-### Vuex 核心
+### Vuex
 
-- **State**：状态数据
-- **Getter**：派生状态
-- **Mutation**：修改 `State` 状态的唯一方法
-- **Action**：同步 + 异步操作（提交 `Mutation`）
-- **modules**：模块化
+<Callout type="info" title="Vuex 核心">
+  - **State**：状态数据 - **Getter**：派生状态 - **Mutation**：修改 `State`
+  状态的唯一方法 - **Action**：同步 + 异步操作（提交 `Mutation`） -
+  **modules**：模块化
+</Callout>
 
-### Pinia 核心
+1️⃣ 用户 Store
 
-- **State**：状态数据
-- **Getter**：派生状态
-- **Action**：同步 + 异步操作（不再区分 mutation）
+```js
+// store/user.js (Vuex 4)
+import { createStore } from "vuex";
+
+// 创建一个独立的模块（推荐）
+const userModule = {
+  // 1. State：相当于 Pinia 中的 ref 数据
+  state: () => ({
+    name: "Tom",
+  }),
+
+  // 2. Getters：相当于 Pinia 中的 computed
+  getters: {
+    isAdmin: (state) => state.name === "admin",
+  },
+
+  // 3. Mutations：同步修改 state 的唯一途径（必须同步）
+  mutations: {
+    SET_NAME(state, newName) {
+      state.name = newName;
+    },
+  },
+
+  // 4. Actions：处理异步或批量逻辑，最终调用 mutation
+  actions: {
+    // 相当于 Pinia 中的 login 方法
+    login({ commit }, newName) {
+      // 可在此添加异步逻辑，如 API 请求
+      // const data = await api.login(newName)
+      commit("SET_NAME", newName); // 提交 mutation 修改 state
+    },
+  },
+};
+
+// 创建 Store
+const store = createStore({
+  modules: {
+    user: userModule, // 注册模块
+  },
+});
+
+export default store;
+```
+
+2️⃣ 在选项式 API 中使用
+
+```vue
+<template>
+  <div>
+    <p>用户名: {{ name }}</p>
+    <p>是否管理员: {{ isAdmin }}</p>
+    <button @click="login('admin')">登录</button>
+  </div>
+</template>
+
+<script>
+import { mapState, mapGetters, mapActions } from "vuex";
+
+export default {
+  computed: {
+    // 映射 state
+    ...mapState(["name"]),
+    // 映射 getters
+    ...mapGetters(["isAdmin"]),
+  },
+  methods: {
+    // 映射 actions（会自动 dispatch）
+    ...mapActions(["login"]),
+  },
+};
+</script>
+```
+
+3️⃣ 在 `<script setup>` 中使用
+
+```vue
+<template>
+  <div>
+    <!-- 通过 $store 访问 -->
+    <p>用户名: {{ $store.state.name }}</p>
+    <p>是否管理员: {{ $store.getters.isAdmin ? "是" : "否" }}</p>
+
+    <!-- 使用 computed 包装 -->
+    <p>用户名(computed): {{ userName }}</p>
+
+    <button @click="handleLogin">登录为 Admin</button>
+  </div>
+</template>
+
+<script setup>
+import { computed } from "vue";
+import { useStore } from "vuex";
+
+const store = useStore();
+
+// 需要用 computed 包裹才能保持响应式
+const userName = computed(() => store.state.name);
+const isAdmin = computed(() => store.getters.isAdmin);
+
+function handleLogin() {
+  // 调用 action（注意 dispatch）
+  store.dispatch("login", "admin");
+
+  // 或者直接提交 mutation（不推荐）
+  // store.commit('SET_NAME', 'admin')
+}
+</script>
+```
+
+### Pinia
+
+<Callout type="info" title="Pinia 核心">
+  - **State**：状态数据 - **Getter**：派生状态 - **Action**：同步 +
+  异步操作（不再区分 mutation）
+</Callout>
+
+1️⃣ 用户 Store
+
+```ts
+export const useUserStore = defineStore("user", () => {
+  const name = ref("Tom");
+  const isAdmin = computed(() => name.value === "admin");
+
+  function login(newName: string) {
+    name.value = newName;
+  }
+
+  return { name, isAdmin, login };
+});
+```
+
+2️⃣ 解构保持响应式
+
+```ts
+const store = useUserStore();
+
+// ❌ 错误：直接解构会丢失响应式
+const { name } = store;
+
+// ✅ 正确：使用 storeToRefs 保持响应式
+const { name } = storeToRefs(store);
+
+// ✅ actions 可以直接解构（不需要 storeToRefs）
+const { login } = userStore;
+```
+
+### 核心区别速查表
+
+| 操作                | Pinia                           | Vuex 4                             |
+| :------------------ | :------------------------------ | :--------------------------------- |
+| **获取 store 实例** | `useUserStore()`                | `useStore()`                       |
+| **读取 state**      | `store.name`                    | `store.state.name`                 |
+| **读取 getter**     | `store.isAdmin`                 | `store.getters.isAdmin`            |
+| **解构保持响应式**  | 用 `storeToRefs`                | 用 `computed` 包裹                 |
+| **修改数据**        | `store.login('admin')`          | `store.dispatch('login', 'admin')` |
+| **映射辅助函数**    | `mapState(useUserStore, [...])` | `mapState(['name'])`               |
 
 ## 性能优化
 
@@ -708,6 +863,57 @@ nextTick(() => {
 | 图片优化     | WebP / 懒加载 / 响应式图片 |
 | GZip 压缩    | Nginx / CDN 开启           |
 | SSR          | 服务端渲染首屏             |
+
+### 渲染优化
+
+| 手段              | 原理                        | 场景              |
+| ----------------- | --------------------------- | ----------------- |
+| `v-once`          | 只渲染一次，后续跳过        | 纯静态内容        |
+| `v-memo`          | 依赖不变则跳过更新          | 大列表 + 少量变化 |
+| `shallowRef`      | 只追踪 `.value`，不深层代理 | 大型不可变数据    |
+| `shallowReactive` | 只代理第一层                | 同上              |
+| `markRaw`         | 标记对象永不代理            | 第三方库实例      |
+| 虚拟滚动          | 只渲染可见区域              | 超长列表          |
+| 按需更新          | `key` + `PatchFlag`         | 编译器自动        |
+
+### 响应式开销控制
+
+```ts
+// 大型数据不需要深层响应式
+const bigList = shallowRef<Item[]>([]);
+
+// 第三方实例不需要代理
+const chart = markRaw(new Chart(element));
+
+// 读取原始对象（不触发依赖）
+const raw = toRaw(reactiveObj);
+```
+
+### 路由与组件懒加载
+
+```ts
+const routes = [
+  {
+    path: "/user",
+    component: () => import("./views/User.vue"), // 路由级懒加载
+  },
+];
+
+// 异步组件
+const AsyncComp = defineAsyncComponent(() => import("./HeavyChart.vue"));
+```
+
+## 常见误区
+
+| 误区                          | 正解                                                            |
+| ----------------------------- | --------------------------------------------------------------- |
+| `reactive` 解构后还是响应式   | 解构丢失代理，用 `toRefs` 或改用 `ref`                          |
+| `computed` 可以替代 `watch`   | `computed` 是纯派生，`watch` 是副作用                           |
+| `nextTick` 一定是微任务       | 实现取决于环境（`Promise` → `MutationObserver` → `setTimeout`） |
+| Vue 3 不需要 `key`            | 列表 `diff` 仍然需要 `key` 来识别节点                           |
+| `v-if` 和 `v-for` 可以同元素  | Vue 3 优先级变了但仍然不推荐，用 `computed`                     |
+| Pinia action 里不能异步       | Pinia action 天然支持 `async/await`                             |
+| `shallowRef` 修改嵌套值能触发 | 只追踪 `.value` 赋值，嵌套修改需替换整个值                      |
 
 ## Vue 设计模式
 
