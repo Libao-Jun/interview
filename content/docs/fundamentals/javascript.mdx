@@ -24,21 +24,120 @@ JS 题多围绕"为什么"：为什么有暂时性死区？为什么箭头函数
 
 ## 类型判断
 
+1️⃣ 四种主要方式
+
 | 方式                  | 基本类型 | null  | Array | NaN   | 自定义类 |
 | --------------------- | -------- | ----- | ----- | ----- | -------- |
-| `typeof`              | 准确    | `"object"` | —   | `"number"` | —      |
+| `typeof`              | 准确    | `"object"` | `"object"` | `"number"` | —      |
 | `instanceof`          | —       | —     | 准确  | —     | 准确     |
+| `Array.isArray()`          | 数组      | —     | —  | —     | —     |
 | `Object.prototype.toString.call()` | 准确 | 准确 | 准确 | 准确 | 准确 |
 
+2️⃣ typeof — 判断基础类型
+
 ```js
-Object.prototype.toString.call(null)       // "[object Null]"
-Object.prototype.toString.call([])         // "[object Array]"
-Object.prototype.toString.call(NaN)        // "[object Number]"
+typeof "hello"; // 'string'
+typeof 42; // 'number'
+typeof true; // 'boolean'
+typeof undefined; // 'undefined'
+typeof Symbol(); // 'symbol'
+typeof 10n; // 'bigint'
+typeof function () {}; // 'function'
+
+// 两个坑
+typeof null; // 'object' ← 历史遗留 bug
+typeof []; // 'object' ← 无法区分数组和普通对象
+typeof {}; // 'object'
 ```
 
-<Callout>
-`typeof null === "object"` 是 JS 历史遗留 Bug（JS 初期值以 000 开头表示对象，null 全零被误判）。
+3️⃣ Object.prototype.toString.call() — 精确类型
+
+```js
+Object.prototype.toString.call("hello"); // '[object String]'
+Object.prototype.toString.call(42); // '[object Number]'
+Object.prototype.toString.call(null); // '[object Null]'
+Object.prototype.toString.call(undefined); // '[object Undefined]'
+Object.prototype.toString.call([]); // '[object Array]'
+Object.prototype.toString.call({}); // '[object Object]'
+Object.prototype.toString.call(new Date()); // '[object Date]'
+Object.prototype.toString.call(/abc/); // '[object RegExp]'
+Object.prototype.toString.call(new Map()); // '[object Map]'
+Object.prototype.toString.call(new Set()); // '[object Set]'
+```
+
+4️⃣ instanceof — 判断实例的构造函数（基于原型链）
+
+```js
+[] instanceof Array   // true
+[] instanceof Object  // true（数组也是对象）
+new Date() instanceof Date // true
+
+// 局限：基础类型不行
+'hello' instanceof String // false
+42 instanceof Number      // false
+
+// 局限：跨 iframe 不准确
+// iframe 里的数组和当前窗口的 Array 不是同一个构造函数
+```
+
+5️⃣ Array.isArray() — 专门判断数组
+
+```js
+Array.isArray([]); // true
+Array.isArray({}); // false
+Array.isArray("hello"); // false
+// 跨 iframe 也能正确判断
+```
+## JS中的错误类型
+
+### 内置错误类型
+
+<Callout title="JavaScript提供的错误对象">
+JavaScript 提供了 `7` 种核心错误对象，它们都继承自 `Error`。
 </Callout>
+
+1️⃣ 7 种核心错误对象
+
+- `Error` — 所有错误类型的通用基类，也可直接用于自定义抛错。
+- `SyntaxError` — 语法错误，通常在`代码解析/编译阶段`抛出，无法被同作用域的 `try...catch` 捕获。
+- `ReferenceError` — 引用错误，当访问一个`未声明的变量`时抛出。
+- `TypeError` — 类型错误，当`值的类型不符合预期`时抛出，比如调用非函数或访问 null 的属性。
+- `RangeError` — 范围错误，当值不在允许的集合或范围内时抛出。
+- `URIError` — URI 处理错误，当 `decodeURIComponent` 等函数接收到格式错误的 URI 时抛出。
+- `EvalError` — 历史遗留错误，原本在 `eval()` 使用不当时抛出。现代 JS 已不再主动抛出此错误，仅保留对象以保证兼容性。
+
+2️⃣ 错误类型判断技巧
+
+```js
+try {
+  // 可能出错的代码
+} catch (err) {
+  if (err instanceof TypeError) {
+    // 处理类型错误
+  } else if (err instanceof ReferenceError) {
+    // 处理引用错误
+  } else if (err.code === 403) {
+    // 处理自定义业务错误
+  } else {
+    // 其他未知错误
+  }
+}
+```
+
+### 自定义错误类型
+可以通过继承 `Error` 创建业务专属错误，这能保留原始错误信息和堆栈。
+
+```js
+class BusinessError extends Error {
+  constructor(message, code) {
+    super(message);
+    this.name = "BusinessError";
+    this.code = code;
+  }
+}
+
+throw new BusinessError("用户权限不足", 403);
+```
 
 ## 类型转换
 
@@ -125,10 +224,10 @@ Object.prototype.__proto__ === null  // 链的终点
 | ----------- | -------- | ---------------- |
 | 搜索框输入  | `防抖`   | 等用户输入完     |
 | 提交按钮    | `防抖`   | 防止重复提交     |
-| 窗口 resize | `防抖`   | 等操作完成       |
 | 自动保存    | `防抖`   | 等编辑停止       |
-| 滚动加载    | **节流** | 持续监控频率控制 |
-| 鼠标跟随    | **节流** | 高频更新需限频率 |
+| 窗口 resize | **节流**   | 等操作完成       |
+| 滚动事件    | **节流** | 持续监控频率控制 |
+| 鼠标移动    | **节流** | 高频更新需限频率 |
 | 游戏射击    | **节流** | 控制技能冷却     |
 | 埋点上报    | **节流** | 减少请求次数     |
 
@@ -346,3 +445,387 @@ DOM 事件传播分为三个阶段: `捕获阶段（从外到内）→ 目标阶
 - 处理循环引用（WeakMap 记录已拷贝对象）
 - 处理特殊对象（Date / RegExp / Map / Set）
 - 处理函数（直接引用或跳过）
+
+## == vs === vs Object.is()
+
+- `==`: 松散相等，在比较两个值之前，若类型不统一（会`先强制转换型转换`）
+- `===`: 严格相等，类型 和 值都相等（`不会进行类型转换`）
+- `Object.is()`: 同值比较，比较两个值是否相等
+
+## 0.1 + 0.2 !== 0.3
+
+<Callout title="JS采用的双精度浮点数标准">
+JavaScript 使用 `IEEE 754` 双精度浮点数标准，无法精确表示某些十进制小数。
+</Callout>
+
+✅ 解决方案
+
+- 转为整数计算：先放大成整数，运算完再缩小，避开小数。
+- 第三方库：`big.js`、`mathjs`、`decimal.js`、`bignumber.js`
+
+## 脚本
+
+### CSS与JS完整的阻塞关系图
+
+```js
+浏览器解析 HTML
+    ↓
+遇到 <link rel="stylesheet">
+    ├── 继续解析 HTML（不阻塞）,并下载 CSS（异步）
+    └── 构建 CSSOM 树（需要等待）
+    ↓
+遇到 <script>
+    ├── 如果前面有未完成的 CSS
+    │   └── 等待 CSS 加载完成（CSS 阻塞 JS）
+    ├── 下载 JS
+    ├── 执行 JS（阻塞 HTML 解析）
+    └── 恢复解析
+    ↓
+等待 CSSOM 树构建完成
+    ↓
+合并 DOM + CSSOM = 渲染树
+    ↓
+渲染页面
+```
+
+### CSS加载会阻塞DOM渲染?
+
+<Callout type="warn" title="答案">
+会阻塞 DOM 渲染（CSS 不会阻塞 HTML 解析，但会阻塞 DOM 渲染）
+</Callout>
+```js
+// 浏览器的处理流程
+1. 解析 HTML，构建 DOM 树（CSS 不阻塞这个）
+2. 下载并解析 CSS，构建 CSSOM 树（CSS 阻塞这个）
+3. 等待 CSSOM 构建完成
+4. 合并 DOM 树 + CSSOM 树，生成渲染树
+5. 布局和绘制
+6. 呈现页面
+
+// 关键：渲染必须等待 CSSOM 构建完成
+```
+
+### JS加载会阻塞DOM渲染?
+
+<Callout type="warn" title="答案">
+JS 加载会阻塞 DOM 渲染
+</Callout>
+
+```js
+// 浏览器解析流程
+1. 解析 HTML，构建 DOM 树
+2. 遇到 <script> 标签
+   ├── 停止 HTML 解析（阻塞）
+   ├── 下载 JS 文件（如果外部脚本）
+   ├── 执行 JS 代码
+   └── 恢复 HTML 解析
+3. 继续解析后续 HTML
+```
+
+### 四种类型脚本对比
+
+| 特性           | 普通 `script`  | `script async`                 | `script defer`   | `script type="module"`     |
+| -------------- | -------------- | ------------------------------ | ---------------- | -------------------------- |
+| 阻塞HTML解析   | ✅             | ❌ 否[下载时]，✅ 是[执行时]   | ❌ 否            | ❌ 否                      |
+| 下载方式       | 同步下载       | 异步下载                       | 异步下载         | 异步下载                   |
+| 下载时机       | 遇到立即下载   | 遇到并行下载                   | 遇到并行下载     | 遇到并行下载，同时分析依赖 |
+| 执行时机       | 下载后立即执行 | 下载后立即执行                 | HTML解析完后执行 | HTML解析完后执行           |
+| 执行顺序       | 文档顺序       | 下载完成顺序[谁先下完谁先执行] | 保证按文档顺序   | 文档顺序                   |
+| 允许顶层 await | ❌             | ❌                             | ❌               | ✅ 需`async`标记           |
+
+### 实际执行时机图示
+
+```txt
+HTML 解析 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━▶
+
+普通脚本   [下载▼][执行▼]
+           └阻塞─┘
+
+async      [下载▼]  [执行▼]  (下载完就执行，可能打断解析)
+           ←不阻塞→   └阻塞─┘
+
+defer      [下载▼]              [执行▼]
+           ←不阻塞→            DOM 解析完
+
+module     [下载▼]              [执行▼]
+(defer默认)←不阻塞→            DOM 解析完
+```
+
+### 详解
+
+1️⃣ 普通 `script`
+
+```js
+<script src="app.js"></script>
+```
+
+- 浏览器解析 HTML 时，遇到它就会停下来。
+- 如果是外链脚本，要先下载，再立即执行。
+- 执行完后，才继续往下解析 HTML。
+- 多个普通脚本严格按标签顺序执行。
+
+<Callout type="warn" title="普通脚本的选择策略">
+- 适合：必须立刻执行、并且依赖当前阻塞点上下文的脚本
+- 缺点
+ - 容易阻塞首屏渲染
+ - 若脚本很大，页面会明显白屏/卡住
+</Callout>
+
+2️⃣ `script async`
+
+```js
+<script async src="analytics.js"></script>
+```
+
+- 遇到标签就并行下载，不阻塞 HTML 解析。
+- 哪个脚本先下载完，就先执行。
+- 执行时会打断 HTML 解析。
+- 多个 async 之间没有顺序保证。
+- DOMContentLoaded 不会专门等它。
+
+<Callout type="warn" title="script async 选择策略">
+- 适合(尽快下载，下载完就执行，顺序别指望)
+  - 彼此独立的第三方脚本
+  - 统计、埋点、广告、监控这类“不依赖页面其他脚本顺序”的资源
+- 不适合
+ - 有前后依赖关系的脚本
+ - 依赖 DOM 已完整生成的初始化逻辑
+</Callout>
+
+3️⃣ `script defer`
+
+```js
+<script defer src="a.js"></script>
+<script defer src="b.js"></script>
+```
+
+- 遇到标签就并行下载，不阻塞 HTML 解析。
+- 等整个 HTML 解析完成后，再开始执行。
+- 多个 defer 会按标签顺序执行。
+- 会在 DOMContentLoaded 之前执行完，所以 DOMContentLoaded 会等它。
+
+<Callout type="warn" title="script defer 优势">
+- 适合（先下载，等 HMTL 文档解析完，然后按顺序执行）
+- 应用场景
+  - 主业务脚本
+  - 依赖 DOM 基本结构已经就绪的初始化代码
+  - 多个文件之间有明确执行顺序的场景
+</Callout>
+
+4️⃣ `script type="module"`
+
+```js
+<script type="module" src="main.js"></script>
+```
+
+- 默认就带有 defer-like 行为，不阻塞 `HTML` 解析。
+- 会等 `HTML` 解析结束后执行。
+- 支持 `import / export`，浏览器会继续拉取它的依赖模块。
+- 模块有自己的作用域，不会把变量挂到全局。
+- 默认是严格模式。
+- 同一个模块 URL 通常只会执行一次并缓存。
+- `DOMContentLoaded` 会等模块及其依赖执行完成。
+
+## JS原生实现滚动加载
+
+<Callout title="核心原理"> 
+监听滚动事件，当滚动到底部（或接近底部）时，触发加载更多数据的逻辑。
+</Callout>
+
+### 判断触底
+
+```txt
+scrollHeight（内容总高度 = 整个盒子 = scrollTop + clientHeight + 剩余未显示高度 ）
+
+┌─────────────────────────┐
+│      scrollTop          │  ← 已滚动的距离/高度
+│      (已滚过的部分)     │
+├─────────────────────────┤  ← 可视区域顶部
+│      clientHeight       │  ← 可视区域高度
+│      (看得到的部分)     │
+├─────────────────────────┤  ← 可视区域底部
+│     剩余未show内容      │
+└─────────────────────────┘
+```
+
+<Callout title="触底条件"> 
+`scrollTop + clientHeight >= scrollHeight` (当滚动到底部时，剩余未显示高度 = 0)
+</Callout>
+
+### A方式：scroll 事件 + 节流
+
+```js
+const container = document.querySelector(".list-container");
+let page = 1;
+let loading = false;
+let noMore = false;
+
+// 节流函数
+function throttle(fn, delay) {
+  let timer = null;
+  return function (...args) {
+    if (timer) return;
+    timer = setTimeout(() => {
+      fn.apply(this, args);
+      timer = null;
+    }, delay);
+  };
+}
+
+// 加载数据
+async function loadMore() {
+  if (loading || noMore) return;
+  loading = true;
+
+  try {
+    const res = await fetch(`/api/list?page=${page}`);
+    const data = await res.json();
+
+    if (data.list.length === 0) {
+      noMore = true;
+      return;
+    }
+
+    // 渲染数据
+    data.list.forEach((item) => {
+      const div = document.createElement("div");
+      div.textContent = item.name;
+      container.appendChild(div);
+    });
+
+    page++;
+  } finally {
+    loading = false;
+  }
+}
+
+// 监听滚动（带节流）
+window.addEventListener(
+  "scroll",
+  throttle(() => {
+    const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+    // 距离底部 100px 时提前加载
+    if (scrollTop + clientHeight >= scrollHeight - 100) {
+      loadMore();
+    }
+  }, 200),
+);
+
+// 首次加载
+loadMore();
+```
+
+### B方式：IntersectionObserver
+
+<Callout title="核心思路（推荐）"> 
+在列表底部放一个不可见的「哨兵元素」，用 `IntersectionObserver` 监听它是否进入视口，进入即触发加载。
+</Callout>
+
+**实现步骤**
+- 1.放置哨兵：在列表容器底部放一个空的哨兵元素（`#sentinel`）
+- 2.创建观察者：创建 `IntersectionObserver` 观察哨兵元素
+- 3.触发条件判断：哨兵进入视口时（`isIntersecting` 为 `true`），调用 `loadMore` 加载下一页
+- 4.防重复 & 结束标记：用 `loading` 防重复请求，`noMore` 标记数据已加载完毕
+- 5.停止观察：数据加载完毕后调用 `observer.unobserve()` 停止观察
+- 6.提前触发（可选）：通过 `rootMargin: '100px'` 实现提前触发，优化体验
+
+```html tab="html"
+<!--在列表底部放一个哨兵元素-->
+<div class="article-list">
+  <!-- 列表 -->
+  <div v-for="article in list" :key="article.id" class="card">
+    <h3>{{ article.title }}</h3>
+    <p>{{ article.content }}</p>
+  </div>
+
+  <!-- 哨兵元素 -->
+  <div ref="sentinelRef" id="sentinel"></div>
+
+  <!-- 加载状态 -->
+  <div v-if="loading" class="loading">加载中...</div>
+
+  <!-- 数据加载完毕 -->
+  <div v-if="noMore && list.length > 0" class="no-more">全部加载完毕</div>
+
+  <!-- 错误处理 -->
+  <div v-if="error" class="error" @click="refresh">
+    加载失败，点击重试 ({{ error.message }})
+  </div>
+
+  <!-- 空状态 -->
+  <div v-if="!loading && list.length === 0 && !error" class="empty">
+    暂无数据
+  </div>
+</div>
+```
+```js tab="JS逻辑"
+// 创建观察者
+const observer = new IntersectionObserver((entries) => {
+    // 哨兵进入视口时触发加载
+    if (entries[0].isIntersecting) {
+      loadMore();
+    }
+  },
+  {
+    rootMargin: "100px", // 提前 100px 触发
+  },
+);
+
+const sentinel = document.getElementById("sentinel");
+let page = 1;
+let loading = false;
+let noMore = false;
+
+async function loadMore() {
+  if (loading || noMore) return;
+  loading = true;
+
+  try {
+    const res = await fetch(`/api/list?page=${page}`);
+    const data = await res.json();
+
+    if (data.list.length === 0) {
+      noMore = true;
+      sentinel.textContent = "没有更多了";
+      observer.unobserve(sentinel); // 停止观察
+      return;
+    }
+
+    const container = document.querySelector(".list-container");
+    data.list.forEach((item) => {
+      const div = document.createElement("div");
+      div.textContent = item.name;
+      container.appendChild(div);
+    });
+
+    page++;
+  } finally {
+    loading = false;
+  }
+}
+
+observer.observe(sentinel);
+loadMore();
+```
+
+### 两种方式对比
+
+| 维度     | scroll + 节流              | IntersectionObserver          |
+| -------- | -------------------------- | ----------------------------- |
+| 性能     | 频繁触发，即使节流也有开销 | 浏览器原生优化，性能更好      |
+| 代码复杂 | 需要手动计算位置 + 节流    | 回调直接返回 `isIntersecting` |
+| 兼容性   | 全兼容                     | 现代浏览器均支持              |
+| 精度     | 取决于节流间隔             | 精确                          |
+| 推荐     | 需要兼容老浏览器时         | ✅ 优先使用                   |
+| 使用场景 | 复杂滚动逻辑               | 可见性检测专用                |
+
+### 关键细节
+
+- **防重复请求**：用 `loading` 标志位，请求中不再触发
+- **没有更多数据**：用 `noMore` 标志位，到底后停止请求
+- **提前加载**：不要等完全触底，提前 100-200px 开始加载，体验更好
+- **节流而非防抖**：滚动场景用节流更合适，保证持续滚动时也能触发
+- **关键配置**
+  - `rootMargin` 提前触发
+  - `isLoading` 防重复
+  - 数据加载完毕后 `unobserve` 及时释放资源。
