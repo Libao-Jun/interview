@@ -22,6 +22,85 @@ icon: Monitor
 10. 合成（Composite）：GPU 合成各层，显示到屏幕
 ```
 
+## 跨Tab标签通信
+
+| 方式                        | 即时性 | 方向       | 数据量 | 适用场景                     |
+| --------------------------- | ------ | ---------- | ------ | ---------------------------- |
+| BroadcastChannel            | 实时   | 广播       | 较大   | 同源多 Tab 实时通信          |
+| SharedWorker                | 实时   | 双向       | 任意   | 复杂数据共享、WebSocket 共享 |
+| localStorage + storage 事件 | 实时   | 广播       | 5MB    | 简单状态同步、跨 Tab 登录    |
+| Service Worker              | 实时   | 广播       | 较大   | PWA 离线推送                 |
+| postMessage                 | 实时   | 定向       | 任意   | iframe、跨域窗口通信         |
+| window.open / opener        | 实时   | 定向       | 较小   | 父子窗口通信                 |
+| cookie                      | 轮询   | 全局       | 4KB    | 极简场景、兼容性优先         |
+| IndexedDB                   | 轮询   | 全局       | 无限   | 大量数据共享但非即时需求     |
+| WebSocket                   | 实时   | 服务端中转 | 任意   | 跨设备、跨网络               |
+
+## DOMContentLoaded & window.onload
+
+1️⃣ 介绍
+
+- `DOMContentLoaded`: 表示 HTML 解析完成，DOM 树就绪，才触发。
+- `window.onload`: 表示所有页面所有资源（图片、CSS、iframe、字体）全部加载完成，才触发。
+
+2️⃣ 特性对比
+
+| 特性     | DOMContentLoaded               | window.onload (load)                                  |
+| -------- | ------------------------------ | ----------------------------------------------------- |
+| 触发时机 | DOM 解析完毕                   | 所有资源（DOM,图片,CSS）加载完毕                      |
+| 依赖项   | 不需要等待图片、CSS 等外部资源 | 必须等待图片、CSS 等外部资源                          |
+| 执行速度 | 快                             | 慢                                                    |
+| 适用场景 | 初始化交互、绑定事件、DOM操作  | 图片展示、需要准确计算图片/资源大小、首屏加载完成统计 |
+
+3️⃣ 详解
+
+```txt
+DOMContentLoaded 在 HTML 完全解析、DOM 树构建完成后触发，
+不需要等图片、CSS、iframe 等外部资源。
+
+window.onload 必须等页面上所有资源全部加载完才触发，
+包括图片、CSS、字体、iframe，所以它比 DOMContentLoaded 晚很多。
+
+实战中：
+- 绑定事件、操作 DOM、初始化框架 → 用 DOMContentLoaded，尽快交互
+- 计算图片尺寸、关闭加载动画 → 用 window.onload，保证资源就绪
+
+另外要提一下：
+- CSS 会影响 DOMContentLoaded 的触发时间，如果脚本在 CSS 后面，
+  必须等 CSS 解析完脚本才执行，从而推迟 DOMContentLoaded。
+- defer 脚本在 DOMContentLoaded 之前执行，async 脚本不阻塞 DOMContentLoaded。
+- 更精细的控制可以用 document.readyState。
+- 现代首屏性能指标用 PerformanceObserver 监测 LCP/FCP，比这两个事件更精确反映用户体验。
+```
+
+4️⃣ 浏览器解析完整时间线
+
+```txt
+开始解析 HTML
+  │
+  ├── 遇到 <script>（无 async/defer）→ 阻塞解析，下载并立即执行
+  ├── 遇到 <link rel="stylesheet"> → 阻塞渲染，但不阻塞 DOM 解析
+  ├── 遇到 <img> → 异步下载，不阻塞 DOM 解析
+  │
+  ▼
+HTML 解析完成，DOM 树构建完成
+  │
+  └── 🔥 触发 DOMContentLoaded
+      │
+      ├── 此时：可以安全操作 DOM、绑定事件
+      ├── 此时：图片可能还没加载完
+      ├── 此时：CSS 已加载（defer 脚本还在等 CSS）
+      │
+      ▼
+    defer 脚本执行、异步脚本执行
+      │
+      ▼
+    所有图片、iframe、字体等资源加载完成
+      │
+      └── 🔥 触发 window.onload
+          │
+          └── 此时：可以获取图片真实尺寸、做加载动画的收尾
+```
 ## HTTP 缓存策略
 
 <Callout type="info" title="HTTP 缓存分类"> 
@@ -197,15 +276,17 @@ CSS ──→ CSSOM ──────┘
 
 ## 跨域解决方案
 
-同源策略：协议 + 域名 + 端口 三者一致
+<Callout title="同源策略">
+指 `协议` + `域名` + `端口` 三者完全相同
+</Callout>
 
 | 方案           | 原理                          | 特点                     |
 | -------------- | ----------------------------- | ------------------------ |
 | CORS           | 服务端设置响应头              | 最主流，需后端配合       |
-| Nginx 代理     | 同源服务端转发                | 无需改后端，运维配置     |
-| JSONP          | `<script>` 不受同源限制       | 只支持 GET，已过时       |
+| 反向代理        | 开发环境常见，同源服务端转发 | Vite/Nginx/Node 无需改后端，运维配置     |
 | WebSocket      | 协议本身不受同源限制          | 适合实时通信             |
 | postMessage    | 跨窗口通信 API               | 适合 iframe / window     |
+| JSONP          | `<script>` 不受同源限制       | 只支持 GET，已过时       |
 
 ### CORS 关键头部
 
@@ -216,6 +297,37 @@ CSS ──→ CSSOM ──────┘
 | `Access-Control-Allow-Headers`| 允许的请求头             |
 | `Access-Control-Allow-Credentials` | 是否允许 Cookie   |
 | `Access-Control-Max-Age`      | 预检缓存时间             |
+
+## 缓存
+
+1️⃣ 特性对比
+
+| 特性          | Cookie                                       | localStorage       | sessionStorage                    |
+| ------------- | -------------------------------------------- | ------------------ | --------------------------------- |
+| 存储大小      | 4KB（约20-50个）                             | 5-10MB             | 5-10MB                            |
+| 生命周期      | 可设置过期时间（默认不设则关闭浏览器失效）   | 永久，除非手动清除 | 当前标签页/会话，标签页关闭即清除 |
+| 与服务器交互  | 每次请求都会自动携带（网络请求的请求头配置） | ❌ 不自动携带      | ❌ 不自动携带                     |
+| 跨域/同源策略 | 受同源策略限制                               | 严格的同源策略限制 | 严格的同源策略+同标签页限制       |
+| 主要用途      | 会话管理（登录态）、用户追踪                 | 持久化存储         | 临时数据（表单草稿、页面状态）    |
+| 数据共享      | 同源共享                                     | 同源共享           | 不共享（仅当前标签页）            |
+
+2️⃣ 作用域
+
+```sh
+- Cookies：靠 Domain(域名) + Path 控制作用域
+  - Domain 控制“哪些网站”能用 Cookie
+  - Path 控制该网站“哪些页面”能用 Cookie。
+- localStorage（读取/修改到同一份数据 — 同源）
+  - 相同的协议
+  - 相同的主机名
+  - 相同的端口
+- sessionStorage（读取/修改到同一份数据）
+  - 同一个窗口/同一个标签页
+  - 同源
+    - 相同的协议
+    - 相同的主机名
+    - 相同的端口
+```
 
 ## Web 安全
 
