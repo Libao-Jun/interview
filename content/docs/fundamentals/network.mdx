@@ -42,6 +42,87 @@ icon: Globe
 | 连接迁移 | 不支持           | 不支持           | 支持              |
 | 建连延迟 | TCP 3-RTT + TLS  | TCP + TLS ≈ 2-3 RTT | 1-RTT / 0-RTT |
 
+## OSI vs TCP/IP网络模型
+
+| OSI七层网络模型         | TCP/IP四层概念模型 | 对应网络协议  |
+| ----------------------- | -----------| --------------------------------------- |
+| 应用层     | 应用层     | HTTP、TFTP、FTP、NFS、WAIS、SMTP        |
+| 表示层     | 应用层     | Telnet、Rlogin、SNMP、Gopher            |
+| 会话层     | 应用层     | SMTP、DNS                               |
+| 传输层     | 传输层     | TCP、UDP                                |
+| 网络层     | 网络层     | IP、ICMP、ARP、RARP、AKP、UUCP          |
+| 数据链路层 | 数据链路层 | FDDI、Ethernet、Arpanet、PDN、SLIP、PPP |
+| 物理层     | 数据链路层 | IEEE 802.1A、IEEE 802.2 到 IEEE 802.11  |
+
+<Callout title="各层基本作用">
+```txt
+应用层 ---------> 为应用程序提供网络服务
+表示层 ---------> 数据格式化、加密、解密
+会话层 ---------> 建立、维护、管理会话连接
+传输层 ---------> 建立、维护、管理端到端连接
+网络层 ---------> IP寻址、路由选择
+数据链路层 ---------> 控制网络层与物理层之间的通信；数据包（帧）
+物理层 ---------> 光缆、电缆、无限电波；比特流（0｜1）传输
+```
+</Callout>
+
+## HTTP 常用方法
+
+1️⃣ 介绍
+
+- get：获取资源，参数一般放 URL 中
+- post：提交数据，常用于新增资源或执行操作
+- put：整体更新资源
+- patch：部分更新资源
+- delete：删除资源
+- options：查询服务器支持的请求方法，CORS 预检常用
+- head：和 GET 类似，但只返回响应头，不返回响应体
+
+2️⃣ 总结记忆口诀
+
+```txt
+GET 查数据不修改，参数都往 URL 放
+POST 新增或提交，非幂等来记得牢
+PUT 整体替换掉，幂等要求要知道
+PATCH 部分改一改，不用传全套数据来
+DELETE 删资源，幂等操作别心软
+OPTIONS 问能力，CORS 预检就找它
+HEAD 只取响应头，检查状态它最牛
+```
+
+## HTTP 状态码
+
+[HTTP 响应状态码](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Reference/Status)
+
+1️⃣ 分类
+
+- 1xx：信息响应（较少见）
+- 2xx：成功响应
+- 3xx：重定向，浏览器自动
+- 4xx：客户端错误
+- 5xx：服务器错误
+
+2️⃣ 前端常见 HTTP 状态码
+
+- 2xx 成功响应
+  - 200：请求成功
+- 3xx 重定向
+  - 301：永久重定向，如网站域名迁移、HTTP → HTTPS
+  - 302：临时重定向，如未登录跳转登录页、A/B 测试
+  - 304 Not Modified：资源未修改（使用本地缓存），浏览器会发送请求但无响应体
+- 4xx 客户端错误（前端锅 — 参数/路径/权限/登录等的问题）
+  - 400 Bad Request：请求参数错误 — 检查请求参数/检查 Content-Type
+  - 401 Unauthorized：未认证（未登录）— 检查是否有 token/检查 token 是否过期
+  - 403 Forbidden：无权限（已登录但权限不足）— 检查用户角色/检查后端权限配置
+  - 404 Not Found：资源不存在，API 路径写错/静态资源路径错误/SPA 刷新后 404（⭐ 前端最高频）
+  - 405 Method Not Allowed：方法不允许
+- 5xx 服务器错误（后端锅）
+  - 500 Internal Server Error：服务器内部错误
+  - 502 Bad Gateway：网关错误（后端服务挂了）
+  - 503 Service Unavailable：服务维护/过载
+  - 504 Gateway Timeout：网关超时（后端响应太慢）
+
+
 ## TCP vs UDP
 
 <Callout type="info" title="TCP vs UDP">
