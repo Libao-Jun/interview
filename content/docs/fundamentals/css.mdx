@@ -8,28 +8,128 @@ icon: Palette
 布局问题建议用 DevTools Layout 面板验证；性能问题建议用 Performance 面板观察 Layout Shift 和 Paint 面积。
 </Callout>
 
+## CSS3 有哪些新特性
+
+- 圆角（border-radius）
+- 阴影（box-shadow）
+- 对文字加特效（text-shadow）
+- 线性渐变（gradient）
+- 旋转、缩放、定位、倾斜
+- 增加了更多的 CSS 选择器
+- 多背景 rgba
+
+## inline vs inline-block
+
+- `inline` 元素`无法设置宽高`，且`内外边距只在水平方向`有效；
+- `inline-block`: 具备行内元素和块级元素的特性
+  - 可`设置宽高`和`内外边距`在所有方向有效。
+
+## position属性
+
+- `static` — 默认值，正常布局，正常占位。
+- `relative` — 相对定位，相对于元素自身的原始位置进行偏移，原位置保留。
+- `absolute` — 绝对定位，完全脱离文档流，相对于最近的使用 relative 父级或祖先级元素进行偏移，不占位。
+- `fixed` — 固定定位，完全脱离文档流，相对于浏览器视口进行偏移，不占位，固定完全不走动。
+- `sticky` — 粘性定位，元素根据正常文档流进行定位，然后相对它的最近滚动祖先和近块级祖先进行偏移。
+
+## rem vs em
+
+- rem，相对单位，相对于 `HTML 根元素` 的 `font-size`（字体大小）值
+- em，相对单位，相对于`当前元素（或父元素）` 的 `font-size`（字体大小）值
+
+## 选择器优先级
+
+```sh
+!important > 行内样式 > id > class = 伪类 > 型态选择器 = 伪元素 > 通用
+```
+
 ## 盒模型
 
 所有 HTML 元素可以看作盒子，由内到外四层：**Content → Padding → Border → Margin**
 
-### 标准盒模型（`box-sizing: content-box`）
+### 盒模型分类
 
-```
-width = content width
-总宽度 = width + padding + border + margin
-```
+- 标准盒模型：`content-box` (W3C 标准盒子模型)
+  - width/height = `content-width/height`
+- 怪异盒模型：`border-box` (IE 盒子模型)
+  - width/height = `content-width/height + padding + border`
 
-### 怪异盒模型（`box-sizing: border-box`）
-
-```
-width = content + padding + border
-总宽度 = width + margin
-```
-
-<Callout type="warn">
-现代项目推荐全局设置 `box-sizing: border-box`，避免 padding 撑大容器。
+<Callout type="warn" title="现代项目推荐css设置">
+通过 css 的 `box-sizing` 来自由设定盒子模型
 </Callout>
 
+### 草图
+
+1️⃣ W3C 标准盒子模型
+
+```txt
+┌──────────────────────────────┐
+│         margin               │
+│  ┌────────────────────────┐  │
+│  │       border           │  │
+│  │  ┌──────────────────┐  │  │
+│  │  │    padding       │  │  │
+│  │  │  ┌────────────┐  │  │  │
+│  │  │  │  content   │  │  │  │
+│  │  │  └─────┬──────┘  │  │  │
+│  │  └────────┼─────────┘  │  │
+│  └───────────┼────────────┘  │
+└──────────────┼───────────────┘
+               ▼
+若 content = 200px
+则
+元素 width = content（200px） = 200px
+```
+
+2️⃣ IE 盒子模型
+
+```txt
+┌─────────────────────────────┐
+│         margin              │
+│  ┌───────────────────────┐  │
+│  │       border          │  │
+│  │  ┌─────────────────┐  │  │
+│  │  │    padding      │  │  │
+│  │  │  ┌───────────┐  │  │  │
+│  │  │  │  content  │  │  │  │
+│  │  │  └───────────┘  │  │  │
+│  │  └───────┬─────────┘  │  │
+│  └──────────┼────────────┘  │
+└─────────────┼───────────────┘
+              ▼
+若 content = 200px，padding = 10px，border = 2px
+则
+元素 width = content（176） + padding（20） + border（4） = 200px
+```
+## 伪类与伪元素
+
+1️⃣ 介绍
+
+- 伪类(`:`): 根据元素的状态变化使用 CSS — 根据状态使用CSS
+- 伪元素(`::`): 在不需新增 HTML 的情况下新增额外元素 — 新增额外元素
+
+2️⃣ 常见伪类与伪元素
+
+- 伪类
+  - `:hover`/`:link`/`:visited`
+  - `:disabled`/`:enabled`
+  - `:first-child`/`:last-child`
+- 伪元素
+  - `::before`: 当前元素之前产生一个子元素
+  - `::after`: 当前元素之后产生一个子元素
+  - `::marker`: 调整列表或摘要元素 (summary) 的项目符号和编号的样式。
+  - `::placeholder`: 可以用来设定这个提示文字的样式。
+  - `::first-letter`: 第一个字母的特殊的样式
+
+## 实现小于 12px
+
+```css
+p {
+  font-size: baseSize; /* 缩放参照的字体，基于该字体进行放大缩小 */
+  transform: scale(n); /* n缩放比例，基于 baseSize 字体大小 */
+  transform-origin: 0 0; /* 从左上角缩放，不然位置会偏 */
+}
+```
 ## BFC（块级格式化上下文）
 
 ### 触发条件
