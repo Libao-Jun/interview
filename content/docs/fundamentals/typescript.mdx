@@ -84,6 +84,74 @@ interface PaginatedResponse<T = User> {
 }
 ```
 
+### 泛型的意义
+
+<Callout title="核心价值">
+让类型参数化，在保持复用能力的同时保留类型信息。
+</Callout>
+🈯️ 总结
+
+> 泛型让你写出 `一套逻辑适配多种类型，且每种类型都能被正确推导` 的代码。
+
+1️⃣ 没有泛型的问题
+
+```ts
+// 方案1：写死类型 → 不通用
+function firstString(arr: string[]): string {
+  return arr[0];
+}
+
+// 方案2：用 any → 丢失类型信息
+function firstAny(arr: any[]): any {
+  return arr[0];
+}
+const result = firstAny([1, 2, 3]);
+result.toFixed(); // 不报错，但如果传的是字符串数组就会运行时炸
+```
+
+2️⃣ 泛型的方式
+
+```ts
+function first<T>(arr: T[]): T {
+  return arr[0];
+}
+
+const a = first([1, 2, 3]); // a 的类型是 number
+const b = first(["x", "y"]); // b 的类型是 string
+a.toFixed(); // ✅ 有提示
+b.toUpperCase(); // ✅ 有提示
+
+// 输入什么类型，输出就保留什么类型，既通用又安全。
+```
+<Callout title="总结">
+泛型让你写出 `一套逻辑适配多种类型，且每种类型都能被正确推导` 的代码。
+</Callout>
+
+### 泛型 vs any vs 联合类型
+
+| 对比         | 泛型        | any         | 联合类型            |
+| ------------ | ----------- | ----------- | ------------------- |
+| 类型安全     | ✅ 保留     | ❌ 丢失     | ✅ 保留             |
+| 输入输出关联 | ✅ 自动推导 | ❌ 断裂     | ❌ 需要手动窄化     |
+| 通用性       | ✅ 任意类型 | ✅ 任意类型 | ⚠️ 只能列举有限类型 |
+
+```ts
+// any：进去什么出来都是 any，类型链断了
+function wrap(v: any): any {
+  return { value: v };
+}
+
+// 联合类型：能表达有限几种，但输入输出不关联
+function wrap(v: string | number): string | number {
+  return v;
+}
+
+// 泛型：传 string 就返回 string，传 number 就返回 number
+function wrap<T>(v: T): { value: T } {
+  return { value: v };
+}
+```
+
 ### 常见泛型工具类型
 
 | 工具类型        | 作用                         | 示例                                  |
@@ -135,16 +203,55 @@ type Getters<T> = {
   [K in keyof T as `get${Capitalize<string & K>}`]: () => T[K]
 }
 ```
+### 函数重载
+
+<Callout title="如何实现函数重载？">
+提供多个函数签名声明，最后给出一个实现签名，但实现代码需要自行做类型守卫判断。
+</Callout>
+
+📙 Example
+
+```ts
+// 函数签名声明
+function greet(person: string): string;
+function greet(person: string[]): string[];
+
+// 实现签名 (不是公共签名，对外不可见)
+function greet(person: string | string[]): string | string[] {
+  if (typeof person === "string") {
+    return `Hello, ${person}`;
+  }
+  return person.map((p) => `Hello, ${p}`);
+}
+```
+<Callout type="warn" title="注意">
+实现签名必须兼容所有重载签名，但不对外暴露，调用时只能匹配重载签名之一。
+</Callout>
 
 ## 类型守卫
 
-| 方式             | 示例                                       |
-| ---------------- | ------------------------------------------ |
-| `typeof`         | `typeof x === 'string'`                    |
-| `instanceof`     | `x instanceof Date`                        |
-| `in`             | `'name' in obj`                            |
-| 字面量类型       | `x === 'left'`                             |
-| 自定义守卫       | `function isString(x: any): x is string`   |
+<Callout tittle="概念">
+类型守卫的核心原理是`类型缩窄（Type Narrowing`。
+通过条件判断，TypeScript 会`自动将联合类型缩小为具体的类型`。
+</Callout>
+
+| 方式             | 示例                                       |说明|
+| ---------------- | -------------------------- |----|
+| `typeof`         | `typeof x === 'string'`    |适用于原始类型的检查|
+| `instanceof`     | `x instanceof Date`        |检查对象是否是特定类的实例|
+| `in`             | `'name' in obj`            |检查对象是否包含某个属性|
+| 真值缩小          | —                          |利用 JS 的真值判断进行类型收窄|
+| 可辨识联合        | —                          |通过标识字段区分类型|
+| 自定义类型守卫    | `value is Type`            |实现灵活的类检查|
+
+<Callout type="warn" title="注意事项">
+
+- 类型守卫必须在条件分支中使用：只有在使用类型守卫进行条件判断后，TS 才会进行类型缩小
+- 返回类型必须是类型谓词：自定义类型守卫的返回类型必须是 `value is Type` 格式
+- 可辨识联合是最佳实践：对于复杂的联合类型，建议使用可辨识联合模式
+- 注意类型收窄的完整性：使用 switch 语句时，建议处理所有可能的分支
+
+</Callout>
 
 ## 枚举
 
