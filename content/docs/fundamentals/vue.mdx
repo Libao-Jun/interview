@@ -10,6 +10,40 @@ icon: Layers
   场景一起说才有说服力。
 </Callout>
 
+## SPA vs MPA
+
+1️⃣ 核心定义
+
+<Callout title="单页应用（SPA，Single Page Application）">
+整个应用只有一个 HTML 页面，内容的更新和切换通过前端路由来实现，而不会重新加载整个页面。
+</Callout>
+
+<Callout title="多页面应用（MPA，Multi-Page Application）">
+每次页面跳转时，后台服务器都会返回一个新的 HTML 页面，页面加载是整页刷新的。
+</Callout>
+
+2️⃣ 详细对比表
+
+| 维度       | 单页应用（SPA）                                                      | 多页面应用（MPA）                                      |
+| ---------- | -------------------------------------------------------------------- | ------------------------------------------------------ |
+| 核心定义   | 仅加载一个 HTML 页面，内容切换靠前端路由和 JS 动态渲染，无需整页刷新 | 每次跳转都从服务器请求新 HTML 页面，页面切换会整页刷新 |
+| 首屏加载   | 首次加载资源较多（JS/CSS），后续切换快                               | 每次页面跳转都需重新加载资源，首屏快，后续慢           |
+| 路由实现   | 前端路由（如 Vue Router），URL 变化不刷新页面                        | 传统后端路由，URL 变化会刷新整个页面                   |
+| 用户体验   | 切换流畅、无闪烁、                                                   | 切换有白屏或闪烁，体验传统                             |
+| SEO 友好性 | 需配合 SSR/预渲染优化，默认对 SEO 不友好                             | 天生支持 SEO，爬虫可直接抓取每个页面                   |
+| 资源管理   | 资源一次性加载，适合组件化、模块化开发                               | 每页独立资源，适合大型门户、内容型网站                 |
+| 状态管理   | 需前端集中管理（如 Vuex/Pinia），页面间状态可共享                    | 每页独立刷新，状态天然隔离，依赖后端 session/cookie    |
+| 开发复杂度 | 前端工程化要求高，需处理路由、权限、缓存、首屏优化等                 | 结构简单，开发门槛低，适合传统后端开发                 |
+| 适用场景   | 后台管理、WebApp、交互性强的应用                                     | 门户网站、新闻资讯、SEO 要求高的内容型网站             |
+| 缺点       | 首屏慢、SEO 难、首包大、浏览器兼容性需关注                           | 页面跳转慢、体验差、代码复用难、前后端协作复杂         |
+
+3️⃣ 主要异同点总结
+
+- 相同点：都属于 Web 应用，最终都在浏览器中运行。
+- 不同点：
+  - SPA 只加载一次页面，依赖 JS 动态渲染，体验好但 SEO 差；
+  - MPA 每次跳转都刷新页面，体验传统但 SEO 友好。
+
 ## 组件与插件
 
 | 维度     | 组件 (Component) | 插件 (Plugin)       |
@@ -411,6 +445,13 @@ data.value = { items: ["new"] }; // 触发更新
   对基础类型用类包装（`.value` 的 get/set），对对象类型内部调用 `reactive`。
 </Callout>
 
+## shallowRef & shallowReactive
+
+| API               | 作用                                                   |
+| ----------------- | ------------------------------------------------------ |
+| `shallowRef`      | 只有 `.value` 这一层是响应式的，内部属性变化不触发更新 |
+| `shallowReactive` | 只有对象的`第一层属性`是响应式的，深层嵌套对象不代理   |
+
 ## v-show vs v-if
 
 | 维度     | `v-if`         | `v-show`        |
@@ -553,6 +594,119 @@ nextTick(() => {
 <!-- v-memo="[]" 等价于 v-once -->
 <div v-memo="[]">永不更新</div>
 ```
+## 组件实现v-model
+
+1️⃣ vue3.x¯（`value prop` 以及 `input` 事件）
+
+```vue
+<template>
+  <input :value="value" @input="$emit('input', $event.target.value)" />
+</template>
+
+<script>
+export default {
+  props: {
+    value: [String, Number], // v-model 默认绑定的 prop 名为 value
+  },
+};
+</script>
+```
+
+2️⃣ Vue 3.4¯（`modelValue` 的 prop以及 `update:modelValue` 的事件）
+
+```vue
+<!-- Child.vue -->
+<script setup>
+const props = defineProps(["modelValue"]);
+const emit = defineEmits(["update:modelValue"]);
+</script>
+
+<template>
+  <input
+    :value="props.modelValue"
+    @input="emit('update:modelValue', $event.target.value)"
+  />
+</template>
+
+<!-- Parent.vue -->
+<Child :modelValue="foo" @update:modelValue="($event) => (foo = $event)">
+</Child>
+```
+
+3️⃣ Vue 3.4﹢（推荐使用 `defineModel()` 宏）
+
+```vue
+<!-- Child.vue -->
+<script setup>
+const model = defineModel();
+
+function update() {
+  model.value++;
+}
+</script>
+
+<template>
+  <div>Parent bound v-model is: {{ model }}</div>
+  <button @click="update">Increment</button>
+</template>
+
+<!-- Parent.vue -->
+<Child v-model="countModel" />
+```
+
+## mixin
+
+### mixin是什么
+
+- `Mixin` 是面向对象程序设计语言中的类，提供了方法的实现。
+- 其他类可以访问 `Mixin` 类的方法，而不必成为其子类。
+- `Mixin` 类通常作为功能模块使用，在需要该功能时“混入”。
+- `Mixin` 本质其实就是一个js对象，它可以包含我们组件中任意功能选项
+  - data
+  - components
+  - methods
+  - created
+  - computed
+  - ...
+
+### 混入分类
+
+- 局部混入
+- 全局混入
+
+### Vue的几种类型的合并策略
+
+- 替换型：props、methods、inject、computed
+  - 同名的props、methods、inject、computed会被后来者代替
+- 合并型：data
+  - 当目标 data 对象不包含当前属性时，调用 set 方法进行合并（set方法其实就是一些合并重新赋值的方法）
+  - 当目标 data 对象包含当前属性并且当前值为纯对象时，递归合并当前对象值，这样做是为了防止对象存在新增属性
+
+- 队列型：全部生命周期和watch
+  - 生命周期钩子和watch被合并为一个数组，然后正序遍历一次执行
+- 叠加型：component、directives、filters
+  - 加型主要是通过原型链进行层层的叠加
+
+小结 ✴️
+
+- 替换型策略有：`props`、`methods`、`inject`、`computed`，就是将新的同名参数替代旧的参数
+- 合并型策略是：`data`, 通过set方法进行合并和重新赋值
+- 队列型策略有：`生命周期函数`和`watch`，原理是将函数存入一个数组，然后正序遍历依次执行
+- 叠加型有：`component`、`directives`、`filters`，通过原型链进行层层的叠加
+
+### 注意事项
+
+- 混入存在相同选项：当组件存在与mixin对象相同的选项的时候，进行递归合并的时候`组件的选项`会`覆盖 mixin 的选项`
+- 生命周期队列性合并：但是如果相同选项为生命周期钩子的时候，会合并成一个数组，先执行mixin的钩子，再执行组件的钩子
+
+## 多次改变同一状态，是一次还是多次执行
+
+- **同步连续修改**：批处理，一次更新 — 即一次执行
+  - Vue 会对同步的多次状态修改进行`批处理`，只触发一次组件重新渲染
+- **异步修改**：多次更新（跨事件循环）— 即多处执行
+  - 若状态修改分散在不同的事件循环中，每次都会触发更新
+- **computed/watch/watchEffect**：同步修改也只执行一次
+- 这种机制大大提升了性能，避免了不必要的重复渲染
 
 ## 组件间通信
 
