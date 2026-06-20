@@ -1,0 +1,389 @@
+---
+title: uni-app
+description: uni-app 是一个使用 Vue.js 开发所有前端应用的框架，开发者编写一套代码，可发布到iOS、Android、鸿蒙Next、Web（响应式）、以及各种小程序（微信/支付宝/百度/抖音/飞书/QQ/快手/钉钉/淘宝/京东/小红书）、快应用、鸿蒙元服务等多个平台。
+icon: Book
+updatedAt: 2026-06-20
+---
+
+## 生命周期
+
+### 应用生命周期
+
+- `onLaunch`：当应用初始化完成时触发（全局只触发一次），参数为应用启动参数。
+- `onShow`：当应用启动，或从后台进入前台显示，参数为应用启动参数。
+- `onHide`：当应用从前台进入后台。
+- `onError`：当应用报错时触发。
+- `onExit`：监听应用退出。
+
+<Callout type="warn" title="注意">
+应用生命周期仅可在 `App.vue` 中监听，在其它页面监听无效。
+</Callout>
+
+### 页面生命周期
+
+- `onInit`（仅百度）：监听页面初始化，其参数为上个页面传递的数据，触发时机早于 onLoad。
+- `onLoad`：监听页面加载，只调用一次，可获取 `options` 参数。
+- `onShow`：监听页面显示，每次出现在屏幕都会触发，包括从下级页面点返回露出当前页面。
+- `onReady`：监听页面初次渲染完成，此时组件已挂载完成，只触发一次。
+- `onHide`：监听页面隐藏（如跳转到其他页面）。
+- `onUnload`：监听页面卸载（重定向或返回关闭页面）。
+- `onPullDownRefresh`：监听用户下拉动作，一般用于下拉刷新。
+- `onReachBottom`：监听页面滚动到底部的事件（不是 scroll-view 滚到底），上拉触底。
+- `onPageScroll`：监听页面滚动。
+- `onShareAppMessage`：用户点击右上角分享。
+- `onResize`：监听窗口尺寸变化。
+- `onTabItemTap`：点击 tab 时触发。
+- `onBackPress`：监听页面返回。
+
+### 组件生命周期
+
+- `beforeCreate` 实例创建之前
+  - 实例初始化之后、数据观测（`data`、`computed`、`watch`）和事件配置之前调用。
+  - 此时无法访问 `data`、`computed`、`methods` 等选项。
+- `created` 实例创建完成之后
+  - 实例创建完成后立即调用。
+  - 已完成数据观测、属性和方法的运算，`data`、`computed`、`methods` 已可用，但 `$el` 尚不可用，DOM 还未生成。
+  - 常用于发起异步请求。
+- `beforeMount`：DOM 挂载之前
+  - 挂载开始之前，`render` 函数首次被调用。
+  - 模板已编译为渲染函数，但尚未生成真实 DOM。
+- `mounted`：DOM 挂载完成
+  - 实例挂载到真实 DOM 之后调用。
+  - 此时 `$el` 替换了挂载点元素 `el`，可以操作 DOM 节点。
+- `beforeUpdate`：数据更新之前
+  - 响应式数据变更、虚拟 DOM 重新渲染和打补丁之前调用。
+  - 适合在更新前获取现有 DOM 状态。
+- `updated`：数据更新完成
+  - 数据更改导致虚拟 DOM 重新渲染和打补丁之后调用。
+  - 此时 DOM 已更新，可执行依赖 DOM 的操作。
+  - 避免在此钩子中修改数据，否则可能陷入无限循环。
+- `activated`：被 `keep-alive` 缓存的组件激活时调用。
+- `deactivated`：被 `keep-alive` 缓存的组件停用时调用。
+- `beforeDestroy`：实例销毁之前调用。在这一步，实例仍然完全可用，适合移除事件监听、清除定时器等清理工作。
+- `destroyed`：实例销毁后调用。所有事件监听器、子实例、指令均已解绑和销毁。
+- `errorCaptured`：当捕获到后代组件的错误时调用，返回 `false` 可阻止错误继续向上传播。
+
+## uni-app 开发规范
+
+- 页面文件遵循 `Vue 单文件组件 (SFC) 规范`，即每个页面是一个 `.vue` 文件。
+- 组件标签靠近小程序规范，详见 `uni-app 组件规范`。
+- 接口能力（JS API）靠近小程序规范，但需将前缀 `wx` / `my` 等替换为 `uni`。
+- 数据绑定及事件处理同 Vue.js 规范，同时补充了应用生命周期及页面的生命周期。
+- 如需兼容 app-nvue 平台，建议使用 flex 布局进行开发。
+
+## `pages.json` 的作用
+
+全局配置文件，用于定义
+
+- **页面路由**：`pages` 数组配置页面路径，第一项为首页。
+- **窗口样式**：`globalStyle` 配置导航栏颜色、背景色、标题等。
+- **TabBar**：配置底部导航栏，最多 5 个 tab。
+- **页面样式**：每个页面可单独配置 `style` 覆盖全局样式。
+- **分包**：`subPackages` 配置，优化小程序的加载性能。
+- **预加载**：`preloadRule` 配置分包预下载规则。
+
+## 跨平台适配与兼容
+
+### 实现条件编译
+
+1️⃣ 使用方法
+以 `#ifdef、#ifndef、%PLATFORM%` 开头，以 `#endif` 结尾。
+
+- `#ifdef`：`if defined` 仅在某平台存在。
+- `#ifndef`：`if not defined` 除了某平台均存在。
+- `%PLATFORM%`：平台名称。
+
+```sh
+
+// 仅出现在 App 平台下的代码
+#ifdef APP-PLUS
+需条件编译的代码
+#endif
+
+// 除了 H5 平台，其它平台均存在的代码（注意if后面有个n）
+#ifndef H5
+需条件编译的代码
+#endif
+
+// 在 H5 平台或微信小程序平台存在的代码
+#ifdef H5 || MP-WEIXIN
+需条件编译的代码
+#endif
+
+// 在 APP 平台且蒸汽模式下存在的代码
+#ifdef APP && VUE3-VAPOR
+需条件编译的代码
+#endif
+
+// 在 APP 平台且非蒸汽模式下存在的代码（注意VUE3-VAPOR前面有个!）
+#ifdef APP && !VUE3-VAPOR
+需条件编译的代码
+#endif
+```
+
+2️⃣ 写法
+
+**写法**：注释语法，代码块仅在特定平台编译。
+
+- 条件注释：`<!-- #ifdef H5 -->` 和 `<!-- #endif -->`
+- JS 条件编译：`// #ifdef MP-WEIXIN` 和 `// #endif`
+- CSS 条件编译：`/* #ifdef APP-PLUS */` 和 `/* #endif */`
+
+### 常见平台标识
+
+- `APP-PLUS`：App（5+App/nvue）
+- `H5`：网页端
+- `MP-WEIXIN`：微信小程序
+- `MP-ALIPAY`：支付宝小程序
+- `MP-BAIDU`：百度小程序
+- `MP-TOUTIAO`：头条/抖音小程序
+- `MP-QQ`：QQ 小程序
+- `MP-KUAISHOU`：快手小程序
+- `MP-LARK`：飞书小程序
+- `QUICKAPP-WEBVIEW`：快应用
+- 注意：`||` 表示或，如 `#ifdef MP-WEIXIN || H5`
+
+### 处理不同平台的样式差异
+
+- **条件编译**：对平台特有样式使用条件编译注释。
+- **`uni.scss`**：定义全局 scss 变量，可以引入不同平台的变量文件覆盖。
+- **动态绑定 class/style**：通过 `uni.getSystemInfoSync()` 获取平台信息，在 JS 中动态切换样式。
+- **`rpx` 单位**：以 750rpx 为基准的响应式单位，在不同屏幕宽度下自动缩放，跨平台良好。
+
+## App 端使用 nvue/vue 页面的区别？什么时候用 nvue？
+
+1️⃣ nvue/vue 区别
+
+- **vue 页面**：基于 WebView 渲染，兼容性好，适合绝大多数业务。
+- **nvue 页面**：基于原生渲染引擎（Weex 增强），性能更高，但语法限制多（仅支持 flex 布局，CSS 子集，不能直接使用大部分 Vue 生态组件）。
+
+2️⃣ 使用场景
+
+- 需要高性能的长列表、瀑布流、复杂动画（如聊天列表、地图上的覆盖物）。
+- 解决 App 端 WebView 渲染白屏、卡顿的问题。
+- 注意：`nvue` 页面只能使用 flex 布局，单位默认是 px。
+
+## 路由与导航
+
+### 路由跳转方式有哪些？区别是什么？
+
+- **`uni.navigateTo({ url: '...' })`**：保留当前页面，跳转到应用内的某个页面，可返回。但层级有限（[小程序层数限制](https://developers.weixin.qq.com/miniprogram/dev/api/route/wx.navigateTo.html#功能描述)）。
+- **`uni.redirectTo({ url: '...' })`**：关闭当前页面，跳转到应用内的某个页面，不可返回。
+- **`uni.reLaunch({ url: '...' })`**：关闭所有页面，打开应用内的某个页面，适合登录后跳转首页。
+- **`uni.switchTab({ url: '...' })`**：跳转到 tabBar 页面，并关闭其他非 tabBar 页面。
+- **`uni.navigateBack({ delta: n })`**：返回上一页面或多级页面，`delta` 为返回层数。
+- **传参**：URL 后拼接 `?key=value&key2=value2`，目标页面 `onLoad(options)` 接收。
+
+### 小程序侧的路由限制有哪些？
+
+1️⃣ 小程序侧的路由限制
+
+- 微信小程序页面层级限制为 **10 层**，超过无法跳转。
+
+2️⃣ uni-app 如何解决
+
+- 及时使用 `uni.redirectTo` 或 `uni.reLaunch` 清理页面栈。
+- 减少不必要的 `navigateTo`，采用组件化或状态切换代替跳转。
+- 使用 `getCurrentPages()` 获取当前页面栈深度，超过 8 层提醒使用 `redirectTo`。
+
+## 组件与 API
+
+### 常用的 UniApp 内置组件有哪些？
+
+- **视图容器**：`view`, `scroll-view`, `swiper`, `swiper-item`
+- **基础内容**：`text`, `rich-text`, `progress`
+- **表单组件**：`button`, `input`, `textarea`, `picker`, `switch`, `radio`, `checkbox`, `form`
+- **导航**：`navigator`
+- **媒体**：`image`, `video`, `audio`, `camera`
+- **其他**：`map`, `canvas`, `web-view`, `ad`
+- **注意**：`text` 组件内只能嵌套 `text`，`view` 内不建议直接放文本（用 `text` 包裹）。
+
+### UniApp 中如何获取用户信息和登录授权？
+
+1️⃣ **小程序端**
+
+- 微信：`<button open-type="getUserInfo" @getuserinfo="...">` 获取用户信息（需用户点击同意）。新版用 `uni.getUserProfile`。
+- `uni.login` 获取 `code`，传到后端换取 `openid` 和 `session_key`，后端生成自定义登录态返回。
+
+2️⃣ **App 端**
+
+- 使用 `uni.login` 获取第三方平台（微信、Apple、Univerify）的授权信息。
+- 一键登录（univerify）：运营商网关直接获取手机号，需在 manifest.json 配置。
+
+3️⃣ **H5**
+
+- 一般用微信网页授权或手机验证码登录。
+
+## 数据缓存
+
+- **同步**：会阻塞主线程，不建议存大量数据。
+  - `uni.setStorageSync()`
+  - `uni.getStorageSync()`
+  - `uni.removeStorageSync()`
+- **异步**：回调或 Promise 形式，不阻塞。
+  - `uni.setStorage()`
+  -  `uni.getStorage()`
+- 存储限制：单个 key 限制 1MB，总限制 10MB（各平台略有不同）。
+- 注意：storage 不是持久化可靠的，重要数据需后端存储。
+
+## 实现上拉加载和下拉刷新
+
+1️⃣ **下拉刷新**
+
+- `pages.json` 中页面 style 开启：`"enablePullDownRefresh": true`
+- 页面监听 `onPullDownRefresh`，数据刷新后调用 `uni.stopPullDownRefresh()` 停止。
+
+2️⃣ **上拉加载**
+
+- 页面监听 `onReachBottom` 事件，加载下一页数据。
+- 常用 `scroll-view` 的 `@scrolltolower` 事件实现局部区域触底加载。
+- 设置 `lower-threshold` 可定义触底距离。
+
+## 图片选择与上传处理
+
+- **选择图片**：`uni.chooseImage({ count, sizeType, sourceType, success })`
+- **上传**：`uni.uploadFile({ url, filePath, name, formData, success })`
+- 注意
+  - 跨端上传时，文件字段名 `name` 需与后端约定；
+  - 多文件上传需循环调用或后端支持多文件一次接收。
+
+## 状态管理与通信
+
+### 状态管理方案有哪些？
+
+- **Vuex**：官方推荐，与 Vue 项目一致。`store` 目录，`$store` 访问。注意小程序全局共享一个 store 实例。
+- **Pinia**：新一代状态管理，更轻量且支持 Composition API，可在 UniApp 中使用。
+- **全局数据 globalData**：在 `App.vue` 中定义 `globalData`，通过 `getApp().globalData` 访问，适合简单数据。
+- **发布订阅**：`uni.$emit`, `uni.$on`, `uni.$once`, `uni.$off`，用于跨页面/组件通信。
+
+### `uni.$emit` 全局事件总线？使用注意什么？
+
+- 是 UniApp 内置的全局通信方法，常用于页面间或非父子组件通信。
+
+1️⃣ **使用**
+
+- `uni.$emit('eventName', data)` 触发事件。
+- `uni.$on('eventName', callback)` 监听事件。
+- `uni.$off('eventName', callback)` 移除监听。
+
+2️⃣ **注意**
+
+- 事件是全局的，必须及时移除监听，否则在页面重复 `onShow` 时会多次绑定造成内存泄漏或重复执行。
+- 通常在页面 `onUnload` 中执行 `uni.$off` 清理当前页面相关监听。
+
+## 性能优化
+
+### 性能优化有哪些常见手段？
+
+- **分包加载**：主包仅保留首页及公共组件，其余按需分包。小程序主包限制 2MB。
+- **减少 setData 数据量**：仅更新需要变化的字段，避免大对象直接 setData。
+- **列表优化**：长列表使用 `recycle-view`（uni-ui 提供）或 `nvue` 的 `list` 组件实现虚拟滚动。
+- **图片优化**
+  - 压缩图片或使用 `WebP` 格式。
+  - `image` 组件使用 `lazy-load` 懒加载。
+  - 小图标用 `iconfont` 或 `SVG`。
+- **预加载**：`preloadRule` 配置预加载分包，`uni.preloadPage` 预加载页面。
+- **避免频繁的接口请求**：合理使用缓存和防抖节流。
+- **条件编译剔除无用代码**：减少打包体积。
+
+### uni-app 小程序如何减少包体积？
+
+- **分包**：将非首页及低频页面放到子包。
+- **静态资源 CDN**：图片等放服务器，H5 和小程序云端引用。
+- **条件编译**：删除纯 H5/App 的代码模块。
+- **组件化与公共提取**：复用代码抽离，避免重复。
+- **依赖优化**：按需引入第三方库（如 lodash 部分函数，ECharts 定制/精简版）。
+- **uni_modules** 插件使用原生组件，减少体积。
+
+## 发布与调试
+
+### uni-app 项目如何打包发布到不同平台？
+
+- **H5**：`npm run build:h5` 或 HBuilderX 发行，生成静态文件部署 Web 服务器。
+- **微信小程序**：HBuilderX 发行 -> 选择微信小程序，生成代码后导入微信开发者工具上传。
+- **App**：HBuilderX 原生 App-云打包或本地离线打包，配置证书、包名等。
+- **其他小程序**：同理，选择对应平台并配置对应 appid。
+
+### 真机调试常见问题与解决办法？
+
+- **基座问题**：自定义基座需重新打包，标准基座无原生插件。
+- **跨域问题**：H5 端需配置代理或后端允许 CORS，App 和小程序不存在此问题。
+- **白屏/卡顿**
+  - 检查是否存在死循环、大量同步操作。
+  - App 端使用 nvue 改善。
+  - 小程序检查 setData 频率和数据大小。
+- **样式差异**：使用条件编译、HBuilderX 选择不同设备模拟器预览。
+
+## 扩展与插件
+
+### uni-app 如何集成和使用原生插件？
+
+- **云端插件**：在插件市场购买或下载，配置到 `manifest.json` 的 `App 原生插件配置`，制作自定义基座调用。
+- **本地插件**：安卓放 `nativeplugins/` 目录，iOS 放 `NativeResources`，配置 `manifest.json`。
+- **JS 调用**：使用 `uni.requireNativePlugin('pluginName')` 获取插件对象，调用其方法。
+- 注意事项
+  - 需制作自定义基座调试，正式包也可使用；
+  - 插件必须与项目打包环境兼容。
+
+### UniCloud 是什么？有什么用？
+
+- DCloud 联合阿里云、腾讯云提供的 Serverless 云开发平台。
+
+1️⃣ **优势**
+
+- 无需搭建服务器，前端直接调用云函数和云数据库。
+- 支持 JQL 操作数据库，类 SQL 语法。
+- 集成 uni-id 用户认证系统，快速实现注册登录。
+- 提供云对象、云存储、CDN 等能力。
+
+2️⃣ **适合**
+
+- 中小项目、快速开发 MVP，降低后端成本。
+
+## 如何实现国际化（多语言）？
+
+1️⃣ **方案**
+
+- 安装 `vue-i18n`，在 `main.js` 挂载。
+- 由于小程序 `vue-i18n` 部分特性不支持，可简化：编写语言包对象，挂载到 `Vue.prototype`，模板用 `$t('key')` 或自写翻译函数。
+- 使用 `uni.setLocale` 获取系统语言，动态切换。
+- 利用 `pages.json` 的 `tabBar` 和导航栏需要国际化时，在 `onShow` 动态修改（小程序限制较多）。
+
+2️⃣ **注意**
+
+- 小程序 `tabBar` 文案无动态 API，可通过自定义 `tabBar` 实现。
+
+## 常见场景问题
+
+### uni-app 中如何实现推送通知？
+
+- **App 端**
+  - 使用 `uni-push`，DCloud 提供的推送服务。
+  - 集成个推 SDK，支持在线、离线推送。
+  - 需配置 `manifest` 的 SDK。
+- **小程序**：使用小程序平台的订阅消息，`uni.requestSubscribeMessage` 调起授权。
+- **H5**：浏览器通知 `Notification` API，但兼容性差，通常用第三方推送或轮询。
+
+### 如何做支付集成？
+
+- **微信小程序支付**：`uni.requestPayment`，传入后端返回的 `timeStamp`, `nonceStr`, `package`, `paySign` 等。
+- **App 端微信/支付宝支付**：配置 manifest SDK，后端生成预支付信息，前端调用 `uni.requestPayment`，需要原生插件支持。
+- **H5**：通常跳转支付链接或扫码支付。
+- 统一下单逻辑放在后端，前端只负责发起支付。
+
+### 页面间通信的方式有哪些？
+
+- URL 传参：`?key=value`。
+- `uni.$emit` 全局事件总线。
+- 全局变量：`getApp().globalData`。
+- `Vuex/Pinia` 状态管理。
+- 本地存储 `uni.setStorageSync`（不推荐频繁读写）。
+- `uni.prePage`：在 `onShow` 中 `let pages = getCurrentPages(); let prevPage = pages[pages.length - 2];` 获取上一页实例并直接修改其数据（小程序可用但非规范做法）。
+
+### uni-app 适配折叠屏、平板
+
+- 使用 `uni.getSystemInfoSync()` 获取屏幕宽高、安全区等信息。
+- 使用弹性布局、百分比、`rpx` 等响应式单位。
+- 监听窗口变化：App 端 `onResize` 生命周期，H5 端 `window.onresize`。
+- 条件编译对平板做特定布局优化。
+- `css` 安全区适配：`safe-area-inset-*` 系列变量。
