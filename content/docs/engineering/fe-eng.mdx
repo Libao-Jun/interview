@@ -245,6 +245,11 @@ const apiUrl = process.env.REACT_APP_API_URL
 ## pnpm run build
 
 ### 构建完整流程
+
+<Callout title="执行流程">
+预编译 → 代码检查 → 依赖分析 → 转译 → 打包 → 优化 → 资源处理 → 产物生成
+</Callout>
+
 ```md
 # pnpm run build 完整流程
 
@@ -256,7 +261,7 @@ const apiUrl = process.env.REACT_APP_API_URL
 - ESLint 代码规范检查
 - TypeScript 类型检查
 
-## 阶段 3：依赖解析阶段
+## 阶段 3：依赖分析阶段
 - 分析模块依赖关系
 - 构建依赖图谱
 
@@ -286,9 +291,6 @@ const apiUrl = process.env.REACT_APP_API_URL
 ## 阶段 8：产物生成阶段
 - 输出文件到 dist 目录
 - 生成 manifest 文件
-
-## 执行顺序
-预编译 → 代码检查 → 依赖解析 → 转译 → 打包 → 优化 → 资源处理 → 产物生成
 ```
 
 ### HMR 工作流程
