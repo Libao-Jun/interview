@@ -4,10 +4,10 @@
   "pages": [
     "index",
     "html",
+    "css",
     "es6",
     "javascript",
     "typescript",
-    "css",
     "vue",
     "react",
     "network",
