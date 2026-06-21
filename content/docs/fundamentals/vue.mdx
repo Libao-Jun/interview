@@ -103,8 +103,9 @@ icon: Layers
 | `renderTriggered` | `onRenderTriggered` | 调试用，追踪重渲染触发（dev）    |
 
 <Callout type="info" title="keep-alive 缓存组件">
-  - 首次进入：`created → mounted → activated` - 再次进入：`activated`（不经过
-  created/mounted） - 失活：`deactivated`（不经过 destroy）
+  - 首次进入：`created → mounted → activated` 
+  - 再次进入：`activated`（不经过 `created/mounted`） 
+  - 失活：`deactivated`（不经过 `destroy`）
 </Callout>
 
 ## 虚拟 DOM
