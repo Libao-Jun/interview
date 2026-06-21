@@ -56,10 +56,48 @@ icon: FileCode
 | Web Worker     | 后台线程，不阻塞主线程              |
 | WebSocket      | 全双工持久连接                      |
 | 表单属性       | `calendar` / `date` / `time` / `email` / `url` / `search` |
+| data-* 属性       | HTML5 引入的`自定义数据属性`，用于在 HTML 元素上`存储私有数据` |
 
 ## src vs href
 
 | 属性  | 用途           | 加载方式       | 阻塞行为                          | 典型标签               |
 | ----- | -------------- | -------------- | --------------------------------- | ---------------------- |
-| `src` | 引入/嵌入资源  | 下载并应用到当前位置 | 普通 `<script>` 阻塞；`async`/`defer`/`<img>`/`<iframe>` 不阻塞 | `<script>` `<img>` `<iframe>` |
+| `src` | 引入/嵌入资源  | 下载并应用到当前位置 | 普通 `<script>` 阻塞；<br/>`async`/`defer`/`<img>`/`<iframe>` 不阻塞 | `<script>` `<img>` `<iframe>` |
 | `href`| 建立链接/关联  | 并行下载，不阻塞解析 | 不阻塞                            | `<a>` `<link>`         |
+
+## data-* 属性
+
+<Callout type="warn" title="应用场景">
+- 适用于**小规模配置数据**和**组件状态**管理
+- 不适合**存储大量**或**敏感数据**。
+</Callout>
+
+### 语法
+
+```html
+<element data-*="somevalue">
+```
+
+### data-* 属性组成
+- 属性名不要包含大写字母（即全小写：包括**小写字母、数字、连字符（-）、下划线（_）、点（.）**）
+- 在 `data-` 后必须至少有一个字符，该属性可以是任何字符串
+
+<Callout type="warn" title="注意">
+自定义属性前缀 `data-` 会被客户端忽略。
+</Callout>
+
+### 命名转换规则
+
+| HTML 属性        | JS 访问方式         | 说明                                 |
+| ---------------- | ------------------- | ------------------------------------ |
+| `data-user-name` | `dataset.userName`  | 连字符 → 驼峰                        |
+| `data-User-Name` | `dataset.username`  | 大写自动转小写（不推荐）             |
+| `data-user_id`   | `dataset.user_id`   | 下划线保留，后续连字符转驼峰         |
+| `data-user.name` | `dataset.user.name` | 点号保留，原样访问（注意是对象嵌套） |
+
+<Callout title="完整规则总结">
+- 连字符（`-`） → 移除，后一个字母转大写（驼峰）
+- 下划线（`_`） → 保留不变
+- 点号（`.`） → 保留不变
+- 大写字母 → 自动转为小写
+</Callout>
