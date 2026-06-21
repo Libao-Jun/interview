@@ -1,11 +1,18 @@
 export const appName = "前端面试知识库";
-export const docsRoute = "/docs";
-export const docsImageRoute = "/og/docs";
-export const docsContentRoute = "/llms.mdx/docs";
 
-// Optional: fill this with your actual GitHub info.
+const isGitHubPages = process.env.GITHUB_PAGES === "true";
+const repository = process.env.GITHUB_REPOSITORY ?? "";
+const repoName = repository.split("/")[1] ?? "";
+const basePath =
+  isGitHubPages && repoName && !repoName.endsWith(".github.io")
+    ? `/${repoName}`
+    : "";
+
+export const docsRoute = `${basePath}/docs`;
+export const docsImageRoute = `${basePath}/og/docs`;
+
 export const gitConfig = {
-  user: "",
-  repo: "",
+  user: "libao-jun",
+  repo: "interview",
   branch: "main",
 };
