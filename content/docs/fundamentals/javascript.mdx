@@ -829,3 +829,19 @@ loadMore();
   - `rootMargin` 提前触发
   - `isLoading` 防重复
   - 数据加载完毕后 `unobserve` 及时释放资源。
+
+## 数组方法
+### 改变原数组 vs 不改变原数组
+| 分类             | 方法                                                                                                                                                                                                                      |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **改变原数组**   | `push`, `pop`, `unshift`, `shift`, `splice`, `sort`, `reverse`, `copyWithin`, `fill`                                                                                                                                      |
+| **不改变原数组** | `concat`, `slice`, `map`, `filter`, `reduce`, `forEach`, `some`, `every`, `find`,<br/> `findIndex`, `indexOf`, `lastIndexOf`, `includes`, `join`, `toString`, `flat`, `flatMap`, <br/>`toReversed`, `toSorted`, `toSpliced`, `with` |
+
+### ES2023 新增不改变原数组方法
+
+| 改变原数组方法 | 不改变原数组方法（ES2023） |
+| -------------- | -------------------------- |
+| `reverse()`    | `toReversed()`             |
+| `sort()`       | `toSorted()`               |
+| `splice()`     | `toSpliced()`              |
+| （无）         | `with()`（替代赋值操作）   |
