@@ -108,8 +108,8 @@ MVVM（Model-View-ViewModel：模型-视图-视图模型）：是一种软件架
 
 | 钩子            | 可访问 data | 可操作 DOM | 适用场景                       |
 | --------------- | ----------- | ---------- | ------------------------------ |
-| `beforeCreate`  | 否          | 否         | 初始化前（几乎不用）           |
-| `created`       | 是          | 否         | 数据请求、初始化               |
+| `beforeCreate`  | 否          | 否         | 初始化前     |
+| `created`       | 是          | 否         | 异步请求、初始化               |
 | `beforeMount`   | 是          | 否         | 挂载前的最后数据修改           |
 | `mounted`       | 是          | 是         | DOM 操作、第三方库初始化       |
 | `beforeUpdate`  | 是          | 是         | 更新前获取旧 DOM 状态          |
@@ -143,6 +143,52 @@ MVVM（Model-View-ViewModel：模型-视图-视图模型）：是一种软件架
   - 再次进入：`activated`（不经过 `created/mounted`） 
   - 失活：`deactivated`（不经过 `destroy`）
 </Callout>
+
+### 父子组件生命周期执行顺序
+
+```sh tab="Vue 2"
+父组件
+├── beforeCreate
+├── created
+├── beforeMount
+│   └── 子组件
+│       ├── beforeCreate
+│       ├── created
+│       ├── beforeMount
+│       └── mounted
+├── mounted
+├── beforeUpdate
+│   └── 子组件
+│       ├── beforeUpdate
+│       └── updated
+├── updated
+├── beforeDestroy
+│   └── 子组件
+│       ├── beforeDestroy
+│       └── destroyed
+└── destroyed
+```
+
+```sh tab="Vue 3"
+父组件
+├── setup
+├── onBeforeMount
+│   └── 子组件
+│       ├── setup
+│       ├── onBeforeMount
+│       └── onMounted
+├── onMounted
+├── onBeforeUpdate
+│   └── 子组件
+│       ├── onBeforeUpdate
+│       └── onUpdated
+├── onUpdated
+├── onBeforeUnmount
+│   └── 子组件
+│       ├── onBeforeUnmount
+│       └── onUnmounted
+└── onUnmounted
+```
 
 ## 虚拟 DOM
 
