@@ -120,6 +120,25 @@ MVVM（Model-View-ViewModel：模型-视图-视图模型）：是一种软件架
 | `deactivated`   | 是          | 是         | keep-alive 失活                |
 | `errorCaptured` | 是          | 是         | 捕获子组件错误                 |
 
+<Callout title="常用场景">
+- beforeCreate（创建之前）：几乎不使用，只有极少数插件初始化场景
+  - `data`、`methods`、`DOM`不可用
+- created（创建完成）：① 异步请求数据（API 调用） ② 初始化非响应式数据 ③ 设置定时器
+  - 此时不能操作 `DOM`，如需操作需使用 `$nextTick`
+- beforeMount（挂载之前）：① 最后一次修改数据的机会 ② 服务端渲染（SSR）中使用
+  - 很少使用，因为数据修改不会触发更新，且 `$el` 不可用
+- mounted（挂载完成）：① DOM 操作 ② 第三方库初始化（如 ECharts、地图） ③ 添加监听事件
+  - 子组件已全部挂载完成，可以安全操作 `DOM`
+- beforeUpdate（更新之前）：① 在 `DOM` 更新前做最后的修改 ② 移除旧事件监听
+  - 不要在此钩子中修改数据，否则会触发无限循环
+- updated（更新完成）：① 依赖 `DOM` 更新的操作 ② 更新第三方库实例
+  - 不要在此钩子中修改数据，会触发无限循环；如需修改需用条件判断
+- beforeDestroy（销毁之前）：① 清除定时器 ② 移除事件监听 ③ 销毁第三方库实例
+  - 必须清理副作用，否则会造成内存泄漏
+- destroyed（销毁完成）：① 清理最后的资源 ② 日志上报
+  - 此时组件已完全销毁，不应再操作` DOM` 或访问响应式数据
+</Callout>
+
 ### Vue 3
 
 | Options API       | Composition API     | 适用场景                         |
