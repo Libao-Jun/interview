@@ -102,6 +102,23 @@ MVVM（Model-View-ViewModel：模型-视图-视图模型）：是一种软件架
   Vue 3 插件注册必须在 `app.mount()` 之前，否则不生效。
 </Callout>
 
+## 组件的命名规范
+- 组件名应该始终是多个单词。
+- 组件的 `data` 必须是一个函数。
+- 为组件样式设置作用域。
+- 和父组件紧密耦合的子组件应该以父组件名作为前缀命名。
+- 组件名应该以高级别的 (通常是一般化描述的) 单词开头，以描述性的修饰词结尾。
+- 模板中的组件名大小写（推荐：kebab-case）。
+- 组件名应该倾向于完整单词而不是缩写。
+
+<Callout title="单文件组件命名规范（强烈推荐）">
+- 大驼峰命名（PascalCase）
+- 横线连接 (kebab-case)
+</Callout>
+<Callout title="风格指南">
+[Vue 特有代码的风格指南](https://v2.cn.vuejs.org/v2/style-guide/)
+</Callout>
+
 ## 生命周期
 
 ### Vue 2
