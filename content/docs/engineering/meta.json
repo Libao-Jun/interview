@@ -1,5 +1,12 @@
 {
   "title": "工程化与场景题",
   "defaultOpen": true,
-  "pages": ["index","fe-eng", "fe-modules","performance", "architecture"]
+  "pages": [
+    "index",
+    "fe-eng",
+    "fe-modules",
+    "performance",
+    "architecture",
+    "sso"
+  ]
 }
