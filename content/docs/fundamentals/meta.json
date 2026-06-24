@@ -12,6 +12,7 @@
     "react",
     "uni-app",
     "mini-program",
+    "h5",
     "network",
     "browser"
   ]
