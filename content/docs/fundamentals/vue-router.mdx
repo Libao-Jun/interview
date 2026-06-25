@@ -114,7 +114,7 @@ icon: Router
 
 ### 方案详解
 
-<Callout title="onBeforeRouteLeave + localStorage">
+<Callout type="idea" title="方案一：onBeforeRouteLeave + localStorage">
 利用 Vue Router 提供的 `onBeforeRouteLeave（离开组件触发）` 组合式 API，
 在用户离开当前路由时拦截并提示，将表单数据存入 `localStorage`。
 页面加载时从 `localStorage` 恢复数据。正式提交后清除草稿。
@@ -129,7 +129,7 @@ icon: Router
 ```
 </Callout>
 
-<Callout title="全局导航守卫 + 自定义事件（多页面统一拦截）">
+<Callout type="idea" title="方案二：全局导航守卫 + 自定义事件（多页面统一拦截）">
 在路由配置文件中使用全局的 `beforeEach` 守卫，
 通过 `meta` 字段标记需要草稿保护的路由，
 结合自定义事件或回调来触发保存逻辑。
@@ -142,7 +142,7 @@ icon: Router
 ```
 </Callout>
 
-<Callout title="Pinia Store 集中管理（推荐用于中大型项目）">
+<Callout type="idea" title="方案三：Pinia Store 集中管理（推荐用于中大型项目）">
 将草稿的状态、保存、恢复、清除逻辑全部封装在 Pinia Store 中，页面组件只负责调用 store 的方法，实现状态集中管理和逻辑复用。
 ```sh
 # 实现步骤
@@ -151,7 +151,8 @@ icon: Router
 3. 在页面组件中使用
 ```
 </Callout>
-<Callout title="keep-alive 组件缓存（无需持久化的快速方案）">
+
+<Callout type="idea" title="方案四：keep-alive 组件缓存（无需持久化的快速方案）">
 利用 Vue 内置的 `<keep-alive>` 组件缓存页面实例，切换路由时组件不会被销毁，表单数据保留在内存中。适用于不需要持久化存储的场景。
 ```sh
 # 实现步骤
@@ -160,7 +161,8 @@ icon: Router
 3. 动态管理缓存的组合式函数，组件激活时（从缓存恢复），组件失活时（被缓存）
 ```
 </Callout>
-<Callout title="自定义对话框 + 后端存储（企业级完整方案）">
+
+<Callout type="idea" title="方案五：自定义对话框 + 后端存储（企业级完整方案）">
 将草稿保存到后端，支持多端同步、版本管理，配合自定义弹窗组件提供良好的用户体验。适用于需要跨设备、团队协作的企业级应用。
 ```sh
 # 实现步骤（流程：对话框组件 → API封装 → 组合式函数 → 页面使用）
