@@ -239,3 +239,67 @@ Sass / Less / Stylus 提供的能力：
 - 每个模块有独立作用域，避免全局污染
 - 编译时生成唯一类名：`.btn_x4f2a`
 - 适用于 React / Vue 等组件化项目
+
+## 深度选择器(穿透)
+CSS深度选择器(穿透)：用于重写底层css或者UI框架底层css样式
+
+- ::v-deep 选择器
+- /deep/ 选择器
+- :deep(选择器)
+
+## 清除浮动
+
+### 为什么要清除浮动[step]
+清除浮动是为了清除使用浮动对元素产生的影响，如浮动的元素高度会塌陷，而高度的塌陷使
+之后页面后面的布局不能正常显示。
+
+### 高度塌陷[step]
+当父级元素的高度小于浮动子元素的时候， 此时就会出现“高度塌陷”
+
+### 清除浮动方案[step]
+- 伪元素清除(使用伪元素)：在需要清除浮动的父元素上添加 clearfix 类名
+- 块级空元素(使用空的块级元素)：将这个空的 div 元素插入到需要清除浮动元素的父元素的末尾
+- clear(both清除浮动)：在需要清除浮动的父元素上添加 clearfix 类名
+- overflow：在需要清除浮动的父元素上添加 `overflow: hidden;` 属性
+
+```css tab="使用伪元素"
+/*在需要清除浮动元素的父元素上添加 clearfix 类名*/
+.clearfix::after {
+  content: "";
+  display: table;/*block*/
+  clear: both;
+}
+```
+
+```html tab="使用空块级元素"
+<!-- 将这个空的 div 元素插入到需要清除浮动元素的父元素的末尾 -->
+<div class="parent">
+    <div class="float-left"></div>
+    <div class="float-right"></div>
+    <div style="clear: both;"></div>
+</div>
+```
+```css tab="both清除浮动"
+/* 在需要清除浮动的父元素上添加 clearfix 类名*/
+.clearfix:after {
+  content: ".";
+  display: block;
+  height: 0;
+  clear: both;
+  visibility: hidden;
+}
+.clearfix {
+  display: inline-block;
+}
+```
+```css tab="使用overflow"
+/*overflow：在需要清除浮动的父元素上添加 overflow: hidden; 属性*/
+.parent {
+  overflow: hidden;
+}
+```
+
+### 注意事项[step]
+clear 属性只有块级元素才有效
+
+

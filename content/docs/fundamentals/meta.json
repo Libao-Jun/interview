@@ -11,6 +11,9 @@
     "vue",
     "react",
     "uni-app",
+    "mini-program",
+    "h5",
+    "vue-router",
     "network",
     "browser"
   ]
