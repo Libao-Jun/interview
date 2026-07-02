@@ -1,6 +1,6 @@
 ---
 title: 状态管理
-description: 渐进式框架的核心机制与生态。核心能力：响应式原理、组件化、生命周期、路由、状态管理。
+description: Vuex 是一个专为 Vue.js 应用程序开发的 — 状态管理模式 + 库。Pinia 是 Vue 的一个 store 库，它允许你 — 在组件/页面之间共享状态。
 icon: Store
 ---
 
@@ -13,7 +13,11 @@ icon: Store
 | TS 支持  | 较弱             | 原生支持                |
 | 动态注册 | 需手动           | 默认动态                |
 
-### Vuex
+## Vuex
+
+Vuex 是一个专为 Vue.js 应用程序开发的 **状态管理模式 + 库**。
+
+### Vuex 核心
 
 <Callout type="info" title="Vuex 核心">
 - **State**：状态数据 
@@ -23,6 +27,7 @@ icon: Store
 - **modules**：模块化
 </Callout>
 
+### Example
 
 ```js tab="userStore.js"
 // store/user.js (Vuex 4)
@@ -129,7 +134,13 @@ function handleLogin() {
 </script>
 ```
 
-### Pinia
+## Pinia
+
+### 定义
+
+Pinia 是 Vue 的一个 store 库，它允许你 **在组件/页面之间共享状态**。
+
+### Pinia 核心
 
 <Callout type="info" title="Pinia 核心">
 
@@ -165,15 +176,47 @@ const { name } = storeToRefs(store);
 const { login } = userStore;
 ```
 
-<Callout type="info" title="Pinia 定义 Store方式">
+### Store 定义方式
+
+:::tip[Pinia 定义 Store方式]
 
 - 组合式 `Store`
 - 选项式 `Store`
 
-</Callout>
+:::
 
 
-### 核心区别速查表
+```js tab="Option Stores" 
+export const useCounterStore = defineStore('counter', {
+  state: () => ({ 
+    count: 0, 
+    name: 'Eduardo' 
+  }),
+  getters: {
+    doubleCount: (state) => state.count * 2,
+  },
+  actions: {
+    increment() {
+      this.count++
+    },
+  },
+})
+```
+
+```js tab="Setup Stores" 
+export const useCounterStore = defineStore('counter', () => {
+  const count = ref(0)
+  const name = ref('Eduardo')
+  const doubleCount = computed(() => count.value * 2)
+  function increment() {
+    count.value++
+  }
+
+  return { count, name, doubleCount, increment }
+})
+```
+
+## 核心区别速查表
 
 | 操作                | Pinia                           | Vuex 4                             |
 | :------------------ | :------------------------------ | :--------------------------------- |
