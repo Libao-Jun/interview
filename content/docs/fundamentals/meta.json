@@ -13,6 +13,7 @@
     "uni-app",
     "mini-program",
     "h5",
+    "store",
     "vue-router",
     "network",
     "browser"
