@@ -137,11 +137,12 @@ const { name: userName = "anonymous" } = obj;
 
 ```sh
             resolve(value)
-Pending ➖➖➖➖➖➖➖➖➖ ► Fulfilled（已完成）
-  │
-  │
-  │  reject(reason)
-  │
+Pending ━━ ━━ ━━ ━━ ━━ ► Fulfilled（已完成）
+  ┃
+  ┃
+  ┃  reject(reason)
+  ┃
+  ┃
   ▼ Rejected（已拒绝）
 
 状态一旦改变就不可逆：仅 2 条路径
