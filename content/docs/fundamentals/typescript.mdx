@@ -5,19 +5,20 @@ icon: Shield
 ---
 
 <Callout type="info">
-TS 面试常考的不是 API 记忆，而是"能不能把运行时问题提前到编译期"。从 this 出发解释为什么需要类型，比罗列语法更有说服力。
+  TS 面试常考的不是 API 记忆，而是"能不能把运行时问题提前到编译期"。从 this
+  出发解释为什么需要类型，比罗列语法更有说服力。
 </Callout>
 
 ## 类型系统概览
 
-| 分类     | 示例                                          |
-| -------- | --------------------------------------------- |
-| 基本类型 | `string` / `number` / `boolean` / `null` / `undefined` |
-| 对象类型 | `object` / `{ name: string }` / `interface`   |
-| 联合类型 | `string \| number`                            |
-| 交叉类型 | `A & B`                                       |
-| 字面量类型 | `'left' \| 'right' \| 'center'`             |
-| 泛型     | `T` / `T extends U` / `T = Default`           |
+| 分类       | 示例                                                   |
+| ---------- | ------------------------------------------------------ |
+| 基本类型   | `string` / `number` / `boolean` / `null` / `undefined` |
+| 对象类型   | `object` / `{ name: string }` / `interface`            |
+| 联合类型   | `string \| number`                                     |
+| 交叉类型   | `A & B`                                                |
+| 字面量类型 | `'left' \| 'right' \| 'center'`                        |
+| 泛型       | `T` / `T extends U` / `T = Default`                    |
 
 ## any/unknown/never
 
@@ -62,32 +63,31 @@ TypeScript 中定义类型的两种方式：`接口（interface）`，`类型别
 - `interface` 适合定义对象（可扩展、可合并）
 - `type` 适合定义类型表达式（联合、交叉、复杂运算）。
 
-
 ## 泛型
 
 ### 基本用法
 
 ```ts
 function identity<T>(value: T): T {
-  return value
+  return value;
 }
 
 // 泛型约束
 function getLength<T extends { length: number }>(arg: T): number {
-  return arg.length
+  return arg.length;
 }
 
 // 默认类型
 interface PaginatedResponse<T = User> {
-  data: T[]
-  total: number
+  data: T[];
+  total: number;
 }
 ```
 
 ### 泛型的意义
 
 <Callout title="核心价值">
-让类型参数化，在保持复用能力的同时保留类型信息。
+  让类型参数化，在保持复用能力的同时保留类型信息。
 </Callout>
 
 1️⃣ 没有泛型的问题
@@ -120,8 +120,9 @@ b.toUpperCase(); // ✅ 有提示
 
 // 输入什么类型，输出就保留什么类型，既通用又安全。
 ```
+
 <Callout title="总结">
-泛型让你写出 `一套逻辑适配多种类型，且每种类型都能被正确推导` 的代码。
+  泛型让你写出 `一套逻辑适配多种类型，且每种类型都能被正确推导` 的代码。
 </Callout>
 
 ### 泛型 vs any vs 联合类型
@@ -149,33 +150,56 @@ function wrap<T>(v: T): { value: T } {
 }
 ```
 
+### 泛型 vs 断言
+
+1️⃣ 泛型 vs 断言
+
+| 对比维度     | 泛型                                           | 断言                                    |
+| ------------ | ---------------------------------------------- | --------------------------------------- |
+| **本质**     | 类型参数化，定义时不预先指定类型，使用时再确定 | 手动覆盖类型推导，绕过自动推导          |
+| **方向**     | 类型从调用处**传入**                           | 开发者**指定**类型                      |
+| **类型安全** | ✅ 编译时严格检查                              | ⚠️ 绕过当前行**编译时**类型检查，需谨慎 |
+| **运行时**   | 完全被擦除，无影响                             | 完全被擦除，无影响                      |
+| **使用场景** | 函数/类/接口的复用                             | DOM操作、常量声明、兜底                 |
+| **类比**     | 函数的"参数"（类型参数）                       | "强制转换"声明                          |
+
+2️⃣ 断言 vs any
+
+| 对比维度     | `as` 断言                       | `any`                             |
+| ------------ | ------------------------------- | --------------------------------- |
+| **作用范围** | 单次表达式                      | 整个变量及其传播                  |
+| **类型推断** | 断言后仍保留正常检查            | 完全关闭，被赋值给谁谁就污染      |
+| **方法提示** | ✅ 有智能提示                   | ❌ 没有，纯编辑器盲写             |
+| **危险程度** | ⚠️ 局部风险                     | 🔴 灾难级，污染整个类型系统       |
+| **类比**     | 跟编译器说 **这一下要相信我的** | 跟编译器说 **别管了，我自己负责** |
+
 ### 常见泛型工具类型
 
-| 工具类型        | 作用                         | 示例                                  |
-| --------------- | ---------------------------- | ------------------------------------- |
-| `Partial<T>`    | 所有属性变可选               | `Partial<User>`                       |
-| `Required<T>`   | 所有属性变必填               | `Required<User>`                      |
-| `Readonly<T>`   | 所有属性只读                 | `Readonly<User>`                      |
-| `Pick<T, K>`    | 选取部分属性                 | `Pick<User, 'name' \| 'age'>`        |
-| `Omit<T, K>`    | 排除部分属性                 | `Omit<User, 'password'>`             |
-| `Record<K, V>`  | 构造键值对类型               | `Record<string, number>`             |
-| `Exclude<U, E>` | 从联合类型中排除             | `Exclude<'a' \| 'b', 'a'>` → `'b'`  |
-| `Extract<U, E>` | 从联合类型中提取             | `Extract<'a' \| 'b', 'a'>` → `'a'`  |
-| `ReturnType<T>` | 获取函数返回值类型           | `ReturnType<typeof fn>`              |
-| `Parameters<T>` | 获取函数参数类型元组         | `Parameters<typeof fn>`              |
+| 工具类型        | 作用                 | 示例                               |
+| --------------- | -------------------- | ---------------------------------- |
+| `Partial<T>`    | 所有属性变可选       | `Partial<User>`                    |
+| `Required<T>`   | 所有属性变必填       | `Required<User>`                   |
+| `Readonly<T>`   | 所有属性只读         | `Readonly<User>`                   |
+| `Pick<T, K>`    | 选取部分属性         | `Pick<User, 'name' \| 'age'>`      |
+| `Omit<T, K>`    | 排除部分属性         | `Omit<User, 'password'>`           |
+| `Record<K, V>`  | 构造键值对类型       | `Record<string, number>`           |
+| `Exclude<U, E>` | 从联合类型中排除     | `Exclude<'a' \| 'b', 'a'>` → `'b'` |
+| `Extract<U, E>` | 从联合类型中提取     | `Extract<'a' \| 'b', 'a'>` → `'a'` |
+| `ReturnType<T>` | 获取函数返回值类型   | `ReturnType<typeof fn>`            |
+| `Parameters<T>` | 获取函数参数类型元组 | `Parameters<typeof fn>`            |
 
 ## 条件类型
 
 ```ts
 // 基本形式
-type IsString<T> = T extends string ? true : false
+type IsString<T> = T extends string ? true : false;
 
 // 条件分发（对联合类型逐个判断）
-type ToArray<T> = T extends any ? T[] : never
-type Result = ToArray<string | number> // string[] | number[]
+type ToArray<T> = T extends any ? T[] : never;
+type Result = ToArray<string | number>; // string[] | number[]
 
 // 阻止分发：用 [T]
-type NoDistribute<T> = [T] extends [any] ? T[] : never
+type NoDistribute<T> = [T] extends [any] ? T[] : never;
 ```
 
 ### infer 关键字
@@ -183,8 +207,8 @@ type NoDistribute<T> = [T] extends [any] ? T[] : never
 在条件类型中推断子类型：
 
 ```ts
-type UnpackPromise<T> = T extends Promise<infer U> ? U : T
-type Result = UnpackPromise<Promise<string>> // string
+type UnpackPromise<T> = T extends Promise<infer U> ? U : T;
+type Result = UnpackPromise<Promise<string>>; // string
 ```
 
 ## 映射类型
@@ -192,18 +216,19 @@ type Result = UnpackPromise<Promise<string>> // string
 ```ts
 // 基本映射
 type Optional<T> = {
-  [K in keyof T]?: T[K]
-}
+  [K in keyof T]?: T[K];
+};
 
 // 键的重映射（TS 4.1+）
 type Getters<T> = {
-  [K in keyof T as `get${Capitalize<string & K>}`]: () => T[K]
-}
+  [K in keyof T as `get${Capitalize<string & K>}`]: () => T[K];
+};
 ```
+
 ### 函数重载
 
 <Callout title="如何实现函数重载？">
-提供多个函数签名声明，最后给出一个实现签名，但实现代码需要自行做类型守卫判断。
+  提供多个函数签名声明，最后给出一个实现签名，但实现代码需要自行做类型守卫判断。
 </Callout>
 
 📙 Example
@@ -221,25 +246,26 @@ function greet(person: string | string[]): string | string[] {
   return person.map((p) => `Hello, ${p}`);
 }
 ```
+
 <Callout type="warn" title="注意">
-实现签名必须兼容所有重载签名，但不对外暴露，调用时只能匹配重载签名之一。
+  实现签名必须兼容所有重载签名，但不对外暴露，调用时只能匹配重载签名之一。
 </Callout>
 
 ## 类型守卫
 
 <Callout tittle="概念">
-类型守卫的核心原理是`类型缩窄（Type Narrowing`。
-通过条件判断，TypeScript 会`自动将联合类型缩小为具体的类型`。
+  类型守卫的核心原理是`类型缩窄（Type Narrowing`。 通过条件判断，TypeScript
+  会`自动将联合类型缩小为具体的类型`。
 </Callout>
 
-| 方式             | 示例                                       |说明|
-| ---------------- | -------------------------- |----|
-| `typeof`         | `typeof x === 'string'`    |适用于原始类型的检查|
-| `instanceof`     | `x instanceof Date`        |检查对象是否是特定类的实例|
-| `in`             | `'name' in obj`            |检查对象是否包含某个属性|
-| 真值缩小          | —                          |利用 JS 的真值判断进行类型收窄|
-| 可辨识联合        | —                          |通过标识字段区分类型|
-| 自定义类型守卫    | `value is Type`            |实现灵活的类检查|
+| 方式           | 示例                    | 说明                           |
+| -------------- | ----------------------- | ------------------------------ |
+| `typeof`       | `typeof x === 'string'` | 适用于原始类型的检查           |
+| `instanceof`   | `x instanceof Date`     | 检查对象是否是特定类的实例     |
+| `in`           | `'name' in obj`         | 检查对象是否包含某个属性       |
+| 真值缩小       | —                       | 利用 JS 的真值判断进行类型收窄 |
+| 可辨识联合     | —                       | 通过标识字段区分类型           |
+| 自定义类型守卫 | `value is Type`         | 实现灵活的类检查               |
 
 <Callout type="warn" title="注意事项">
 
@@ -252,14 +278,15 @@ function greet(person: string | string[]): string | string[] {
 
 ## 枚举
 
-| 类型         | 编译产物        | 反向映射 | 场景         |
-| ------------ | --------------- | -------- | ------------ |
-| 数字枚举     | 双向映射对象    | 有       | 默认         |
-| 字符串枚举   | 单向映射对象    | 无       | 可读性高     |
-| `const enum` | 内联替换        | 无       | 追求零开销   |
+| 类型         | 编译产物     | 反向映射 | 场景       |
+| ------------ | ------------ | -------- | ---------- |
+| 数字枚举     | 双向映射对象 | 有       | 默认       |
+| 字符串枚举   | 单向映射对象 | 无       | 可读性高   |
+| `const enum` | 内联替换     | 无       | 追求零开销 |
 
 <Callout type="warn">
-`const enum` 在 `isolatedModules` 模式下有跨模块风险，建议用字符串字面量联合类型替代。
+  `const enum` 在 `isolatedModules`
+  模式下有跨模块风险，建议用字符串字面量联合类型替代。
 </Callout>
 
 ## 类型兼容性
@@ -269,19 +296,23 @@ function greet(person: string | string[]): string | string[] {
 TS 采用**结构化类型**（鸭子类型），只要形状匹配就兼容，不看声明来源。
 
 ```ts
-interface A { name: string }
-interface B { name: string }
-const a: A = { name: 'x' }
-const b: B = a // OK — 结构相同
+interface A {
+  name: string;
+}
+interface B {
+  name: string;
+}
+const a: A = { name: "x" };
+const b: B = a; // OK — 结构相同
 ```
 
 ### 协变与逆变
 
-| 位置   | 方向   | 示例                                 |
-| ------ | ------ | ------------------------------------ |
-| 返回值 | 协变   | `() => Dog` 可赋值给 `() => Animal` |
-| 参数   | 逆变   | `(a: Animal) => void` 可赋值给 `(d: Dog) => void` |
-| 双向   | 双变   | `strictFunctionTypes: false` 时参数双变 |
+| 位置   | 方向 | 示例                                              |
+| ------ | ---- | ------------------------------------------------- |
+| 返回值 | 协变 | `() => Dog` 可赋值给 `() => Animal`               |
+| 参数   | 逆变 | `(a: Animal) => void` 可赋值给 `(d: Dog) => void` |
+| 双向   | 双变 | `strictFunctionTypes: false` 时参数双变           |
 
 ## 声明文件
 
@@ -300,8 +331,8 @@ type DeepPartial<T> = {
     ? T[K] extends Function
       ? T[K]
       : DeepPartial<T[K]>
-    : T[K]
-}
+    : T[K];
+};
 ```
 
 ### 实现 DeepReadonly
@@ -312,6 +343,6 @@ type DeepReadonly<T> = {
     ? T[K] extends Function
       ? T[K]
       : DeepReadonly<T[K]>
-    : T[K]
-}
+    : T[K];
+};
 ```

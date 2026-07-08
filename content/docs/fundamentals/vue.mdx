@@ -32,30 +32,26 @@ MVVM（Model-View-ViewModel：模型-视图-视图模型）：是一种软件架
 - 后端API
 </Callout>
 <Callout title="View (视图) ">
-- template 模板
-- DOM 元素
-- CSS 样式
+- template 模板（DOM 元素、CSS 样式）
 </Callout>
 <Callout title="ViewModel (视图模型)">
-- 响应式数据（data/ref/reactive）
+- 响应式数据（data / ref / reactive）
 - 计算属性（computed）
 - 事件（methods）
 - 侦听器（watch）
 - 生命周期钩子
 </Callout>
 
-
-
 ## SPA vs MPA
 
 1️⃣ 核心定义
 
 <Callout title="单页应用（SPA，Single Page Application）">
-整个应用只有一个 HTML 页面，内容的更新和切换通过前端路由来实现，而不会重新加载整个页面。
+整个应用只有一个 HTML 页面，内容的更新和切换通过 **前端路由** 来实现，而不会重新加载整个页面。
 </Callout>
 
 <Callout title="多页面应用（MPA，Multi-Page Application）">
-每次页面跳转时，后台服务器都会返回一个新的 HTML 页面，页面加载是整页刷新的。
+每次页面跳转时，后台服务器都会返回一个新的 HTML 页面，页面加载是 **整页刷新** 的。
 </Callout>
 
 2️⃣ 详细对比表
@@ -82,6 +78,8 @@ MVVM（Model-View-ViewModel：模型-视图-视图模型）：是一种软件架
 
 ## 组件与插件
 
+### 组件 vs 插件
+
 | 维度     | 组件 (Component) | 插件 (Plugin)       |
 | -------- | ---------------- | ------------------- |
 | 作用     | 构建 UI 片段     | 扩展 Vue 全局功能   |
@@ -89,7 +87,7 @@ MVVM（Model-View-ViewModel：模型-视图-视图模型）：是一种软件架
 | 注册     | 局部 / 全局      | `app.use(plugin)`   |
 | 编写形式 | `.vue` 文件      | 暴露 `install` 方法 |
 
-### 插件 install 核心对照
+### Vue2 vs Vue3 install
 
 | 功能           | Vue 2 写法           | Vue 3 写法                         |
 | -------------- | -------------------- | ---------------------------------- |
@@ -175,8 +173,8 @@ MVVM（Model-View-ViewModel：模型-视图-视图模型）：是一种软件架
 | `renderTriggered` | `onRenderTriggered` | 调试用，追踪重渲染触发（dev）    |
 
 <Callout type="info" title="keep-alive 缓存组件">
-  - 首次进入：`created → mounted → activated` 
-  - 再次进入：`activated`（不经过 `created/mounted`） 
+  - 首次进入：`beforeCreate → created → mounted → activated` 
+  - 再次进入：`activated`（不经过 `beforeCreate / created / mounted`） 
   - 失活：`deactivated`（不经过 `destroy`）
 </Callout>
 
@@ -236,8 +234,8 @@ MVVM（Model-View-ViewModel：模型-视图-视图模型）：是一种软件架
 📙 `虚拟 DOM`的核心价值
 
 <Callout>
-  当数据变更时，通过新旧两棵虚拟 DOM 树的 Diff
-  算法，计算出最小差异，再批量应用到真实 DOM 上，以此减少昂贵的 DOM 操作。
+  当数据变更时，通过 **Diff 算法** 比较新旧两棵虚拟 DOM 树，计算出最小差异，
+  再**批量**应用到真实 DOM 上，以此减少昂贵的 DOM 操作。
 </Callout>
 ### 核心流程
 
@@ -246,7 +244,7 @@ MVVM（Model-View-ViewModel：模型-视图-视图模型）：是一种软件架
          ↓
        diff（新旧 VNode 对比）
          ↓
-       patch（最小化更新真实 DOM）
+       patch（计算出最小化差异，更新真实 DOM）
 ```
 
 ### 渲染流程
@@ -272,9 +270,9 @@ Diff 新旧 VNode → 生成补丁（patch）
 ## Diff 算法
 
 <Callout type="info" title="概念">
-  Diff 算法是同层级比较新旧 VNode 子节点的算法，找出最小差异，再批量更新到真实
-  DOM。 - Vue2 用双端比较（头头、尾尾、头尾、尾头） - Vue3 用快速 Diff (Fast
-  Diff) + 最长递增子序列。
+Diff 算法是同层级比较新旧 VNode 子节点的算法，找出最小差异，再批量更新到真实 DOM。
+- Vue2 用双端比较（头头、尾尾、头尾、尾头） 
+- Vue3 用快速 Diff (Fast Diff) + 最长递增子序列。
 </Callout>
 
 ## 编译优化
