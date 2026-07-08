@@ -29,7 +29,6 @@ const config = {
   ...(isGitHubPages
     ? {
         output: "export",
-        trailingSlash: true,
         assetPrefix: basePath || undefined,
         basePath: basePath || undefined,
         images: {
