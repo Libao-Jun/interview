@@ -1,0 +1,406 @@
+---
+title: 状态管理
+description: Vuex 是一个专为 Vue.js 应用程序开发的 — 状态管理模式 + 库。Pinia 是 Vue 的一个 store 库，它允许你 — 在组件/页面之间共享状态。
+icon: Store
+---
+
+## Vuex vs Pinia
+
+| 特性     | Vuex             | Pinia                   |
+| -------- | ---------------- | ----------------------- |
+| Mutation | 必须有，同步修改 | 已移除，Action 统一处理 |
+| 模块化   | 嵌套 modules     | 平铺独立 store          |
+| TS 支持  | 较弱             | 原生支持                |
+| 动态注册 | 需手动           | 默认动态                |
+
+## Vuex
+
+Vuex 是一个专为 Vue.js 应用程序开发的 **状态管理模式 + 库**。
+
+### Vuex 核心
+
+:::info[Vuex 核心]
+- **State**：状态数据 
+- **Getter**：派生状态 
+- **Mutation**：修改 `State`状态的唯一方法 
+- **Action**：同步 + 异步操作（提交 `Mutation`） 
+- **modules**：模块化
+:::
+
+### Example
+
+```js tab="userStore.js"
+// store/user.js (Vuex 4)
+import { createStore } from "vuex";
+
+// 创建一个独立的模块（推荐）
+const userModule = {
+  // 1. State：相当于 Pinia 中的 ref 数据
+  state: () => ({
+    name: "Tom",
+  }),
+
+  // 2. Getters：相当于 Pinia 中的 computed
+  getters: {
+    isAdmin: (state) => state.name === "admin",
+  },
+
+  // 3. Mutations：同步修改 state 的唯一途径（必须同步）
+  mutations: {
+    SET_NAME(state, newName) {
+      state.name = newName;
+    },
+  },
+
+  // 4. Actions：处理异步或批量逻辑，最终调用 mutation
+  actions: {
+    // 相当于 Pinia 中的 login 方法
+    login({ commit }, newName) {
+      // 可在此添加异步逻辑，如 API 请求
+      // const data = await api.login(newName)
+      commit("SET_NAME", newName); // 提交 mutation 修改 state
+    },
+  },
+};
+
+// 创建 Store
+const store = createStore({
+  modules: {
+    user: userModule, // 注册模块
+  },
+});
+
+export default store;
+```
+
+```vue tab="选项式中使用"
+<template>
+  <div>
+    <p>用户名: {{ name }}</p>
+    <p>是否管理员: {{ isAdmin }}</p>
+    <button @click="login('admin')">登录</button>
+  </div>
+</template>
+
+<script>
+import { mapState, mapGetters, mapActions } from "vuex";
+
+export default {
+  computed: {
+    // 映射 state
+    ...mapState(["name"]),
+    // 映射 getters
+    ...mapGetters(["isAdmin"]),
+  },
+  methods: {
+    // 映射 actions（会自动 dispatch）
+    ...mapActions(["login"]),
+  },
+};
+</script>
+```
+
+```vue tab="在setup中使用"
+<template>
+  <div>
+    <!-- 通过 $store 访问 -->
+    <p>用户名: {{ $store.state.name }}</p>
+    <p>是否管理员: {{ $store.getters.isAdmin ? "是" : "否" }}</p>
+
+    <!-- 使用 computed 包装 -->
+    <p>用户名(computed): {{ userName }}</p>
+
+    <button @click="handleLogin">登录为 Admin</button>
+  </div>
+</template>
+
+<script setup>
+import { computed } from "vue";
+import { useStore } from "vuex";
+
+const store = useStore();
+
+// 需要用 computed 包裹才能保持响应式
+const userName = computed(() => store.state.name);
+const isAdmin = computed(() => store.getters.isAdmin);
+
+function handleLogin() {
+  // 调用 action（注意 dispatch）
+  store.dispatch("login", "admin");
+
+  // 或者直接提交 mutation（不推荐）
+  // store.commit('SET_NAME', 'admin')
+}
+</script>
+```
+
+## Pinia
+
+### 定义
+
+Pinia 是 Vue 的一个 store 库，它允许你 **在组件/页面之间共享状态**。
+
+### Pinia 核心
+
+:::info[Pinia 核心]
+- **State**：状态数据(ref / reactive / ...) 
+- **Getter**：派生状态(computed) 
+- **Action**：同步 +  异步操作（不再区分 mutation）
+
+:::
+
+```ts tab="useUserStore"
+export const useUserStore = defineStore("user", () => {
+  const name = ref("Tom");
+  const isAdmin = computed(() => name.value === "admin");
+
+  function login(newName: string) {
+    name.value = newName;
+  }
+
+  return { name, isAdmin, login };
+});
+```
+
+```ts tab="使用"
+const store = useUserStore();
+
+// ❌ 错误：直接解构会丢失响应式
+const { name } = store;
+
+// ✅ 正确：使用 storeToRefs 保持响应式
+const { name } = storeToRefs(store);
+
+// ✅ actions 可以直接解构（不需要 storeToRefs）
+const { login } = userStore;
+```
+
+### Store 定义方式
+
+:::tip[Pinia 定义 Store方式]
+
+- 组合式 `Store`
+- 选项式 `Store`
+
+:::
+
+
+```js tab="Option Stores" 
+export const useCounterStore = defineStore('counter', {
+  state: () => ({ 
+    count: 0, 
+    name: 'Eduardo' 
+  }),
+  getters: {
+    doubleCount: (state) => state.count * 2,
+  },
+  actions: {
+    increment() {
+      this.count++
+    },
+  },
+})
+```
+
+```js tab="Setup Stores" 
+export const useCounterStore = defineStore('counter', () => {
+  const count = ref(0)
+  const name = ref('Eduardo')
+  const doubleCount = computed(() => count.value * 2)
+  function increment() {
+    count.value++
+  }
+
+  return { count, name, doubleCount, increment }
+})
+```
+
+### 使用 Store
+
+```vue tab="setup中使用"
+<script setup>
+import { useCounterStore } from '@/stores/counter'
+// 在组件内部的任何地方均可以访问变量 `store` ✨
+const store = useCounterStore()
+</script>
+```
+```vue tab="通过映射辅助函数使用"
+<script setup>
+import { useCounterStore } from '@/stores/counter'
+import { computed } from 'vue'
+
+const store = useCounterStore()
+// ❌ 下面这部分代码不会生效，因为它的响应式被破坏了
+// 与 reactive 相同: https://vuejs.org/guide/essentials/reactivity-fundamentals.html#limitations-of-reactive
+const { name, doubleCount } = store
+name // 将会一直是 "Eduardo"
+doubleCount // 将会一直是 0
+setTimeout(() => {
+  store.increment()
+}, 1000)
+// ✅ 而这一部分代码就会维持响应式
+// 💡 在这里你也可以直接使用 `store.doubleCount`
+const doubleValue = computed(() => store.doubleCount)
+</script>
+```
+
+:::warn[不能对它进行解构]
+
+请注意，`store` 是一个用 `reactive` 包装的对象，这意味着不需要在 `getters` 后面写 `.value`。
+就像 `setup` 中的 `props` 一样，**我们不能对它进行解构**
+
+:::
+
+### 从 Store 解构 — storeToRefs()
+
+为了从 `store` 中提取属性时保持其响应性，你需要使用 **storeToRefs()**。
+它将为每一个响应式属性创建引用。
+当你只使用 `store` 的状态而不调用任何 `action` 时，它会非常有用。
+
+:::warn[注意]
+
+你可以直接从 `store` 中解构 `action`，而不需要 **storeToRefs()**，
+因为 **`action` 是普通函数，解构后仍然保持函数的引用和上下文绑定**，不会像响应式数据那样失去响应性。
+
+:::
+
+```js tab="stores/user.js"
+import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
+
+export const useUserStore = defineStore('user', () => {
+  /*  状态（响应式数据） */
+  const username = ref('张三')
+  const email = ref('zhangsan@email.com')
+  const avatar = ref('default.jpg')
+  const preferences = ref({ theme: 'dark', language: 'zh-CN' })
+  const isLoggedIn = ref(false)
+  
+  /*  计算属性（自动响应式）*/
+  const userLevel = computed(() => {
+    if (!isLoggedIn.value) return '游客'
+    // 根据某些规则计算等级
+    return '黄金会员'
+  })
+  
+  /*  Actions（普通函数） */ 
+  function login(name, pwd) {
+    isLoggedIn.value = true
+    username.value = name
+  }
+  
+  function logout() {
+    isLoggedIn.value = false
+    username.value = ''
+    email.value = ''
+  }
+
+  async function fetchUserInfo() {
+    const res = await api.getUser()
+    username.value = res.name
+    email.value = res.email
+  }
+  
+  function updateProfile(data) {
+    username.value = data.username || username.value
+    email.value = data.email || email.value
+  }
+  
+  return {
+    username,
+    email,
+    avatar,
+    preferences,
+    isLoggedIn,
+    userLevel,
+    login,
+    logout,
+    fetchUserInfo,
+    updateProfile
+  }
+})
+```
+```vue tab="组件使用"
+<script setup>
+import { storeToRefs } from 'pinia'
+import { useUserStore } from '@/stores/user'
+
+// 1. 获取 store 实例
+const userStore = useUserStore()
+
+// 2. 使用 storeToRefs 解构响应式状态（保持响应性）
+const { 
+  username,      // 响应式 ref
+  email,         // 响应式 ref  
+  avatar,        // 响应式 ref
+  preferences,   // 响应式 ref（对象）
+  isLoggedIn,    // 响应式 ref（计算属性）
+  userLevel      // 响应式 ref（计算属性）
+} = storeToRefs(userStore)
+
+// 3. 直接解构 actions（不需要 storeToRefs）
+const { 
+  login,         // action
+  logout,        // action
+  updateProfile, // action
+  fetchUserInfo  // action
+} = userStore
+
+// 5. 在逻辑中使用（保持响应式）
+watch(username, (newName) => {
+  console.log(`用户名从 ${oldName} 变为 ${newName}`)
+})
+
+// 调用 action（无需 .value）
+const handleUpdate = () => {
+  updateProfile({ 
+    username: '新用户名',
+    email: 'new@email.com' 
+  })
+}
+</script>
+
+<template>
+<!-- 4. 在模板中可以直接使用 -->
+<div v-if="isLoggedIn">
+    <p>欢迎, {{ username }} (等级: {{ userLevel }})</p>
+    <img :src="avatar" alt="头像">
+    <button @click="logout">退出</button>
+  </div>
+  <div v-else>
+    <button @click="login('admin', '123456')">登录</button>
+  </div>
+</template>
+```
+
+:::info[]
+
+```js
+const store = useCounterStore()
+
+// ✅ Action 可以直接解构
+  // 原因：action 是函数，解构后仍然是同一个函数引用，且 Pinia 已经自动绑定了 this 上下文
+const { increment } = store
+
+// ❌ 状态不能直接解构（原因：解构会丢失响应式代理，得到的是普通值）
+const { count } = store  // count 变成普通数字，不再响应式
+
+// ✅ 状态必须使用 storeToRefs — 原因：storeToRefs 会创建响应式引用，保持响应性
+const { count } = storeToRefs(store)  // count 是 ref，保持响应式
+```
+📚 记忆口诀
+- 状态用 **storeToRefs**（保持响应式）— 状态是响应式数据需要保持响应性
+- **Actions 直接解构**（因为它们是函数）
+
+:::
+
+## 核心区别速查表
+
+| 操作                | Pinia                           | Vuex 4                             |
+| :------------------ | :------------------------------ | :--------------------------------- |
+| **获取 store 实例** | `useUserStore()`                | `useStore()`                       |
+| **读取 state**      | `store.name`                    | `store.state.name`                 |
+| **读取 getter**     | `store.isAdmin`                 | `store.getters.isAdmin`            |
+| **解构保持响应式**  | 用 `storeToRefs`                | 用 `computed` 包裹                 |
+| **修改数据**        | `store.login('admin')`          | `store.dispatch('login', 'admin')` |
+| **映射辅助函数**    | `mapState(useUserStore, [...])` | `mapState(['name'])`               |

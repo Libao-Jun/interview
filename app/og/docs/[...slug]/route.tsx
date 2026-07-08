@@ -29,6 +29,10 @@ export async function GET(
 }
 
 export function generateStaticParams() {
+  // In dev mode, skip pre-compiling ALL pages
+  if (process.env.NODE_ENV === "development") {
+    return [];
+  }
   return source.getPages().map((page) => ({
     lang: page.locale,
     slug: getPageImage(page).segments,

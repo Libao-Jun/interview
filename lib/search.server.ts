@@ -113,11 +113,18 @@ function collectSearchAliases() {
   return aliases;
 }
 
-const searchAliases = collectSearchAliases();
+let _searchAliases: Map<string, Set<string>> | null = null;
+
+function getSearchAliases(): Map<string, Set<string>> {
+  if (!_searchAliases) {
+    _searchAliases = collectSearchAliases();
+  }
+  return _searchAliases;
+}
 
 export async function buildSearchIndex(page: (typeof source)["$inferPage"]): Promise<AdvancedIndex> {
   const structuredData = await getStructuredData(page);
-  const aliases = Array.from(searchAliases.get(page.url) ?? []);
+  const aliases = Array.from(getSearchAliases().get(page.url) ?? []);
 
   return {
     id: page.url,

@@ -21,44 +21,87 @@ description: Fumadocs文档使用案例。
 
 ### Example
 
-```tsx
-<Callout>Hello World</Callout>
+```md
+:::info
+Hello World
+:::
 
-<Callout title="Title" type="warn">
-  Hello World
-</Callout>
+:::warning[Title]
+Hello World
+:::
 
-<Callout title="Title" type="error">
-  Hello World
-</Callout>
+:::danger[Title]
+Hello World
+:::
 
-<Callout title="Title" type="idea">
-  Hello World
-</Callout>
+:::tip[Title]
+Hello World
+:::
 ```
 
 ### 案例效果
-<Callout>Hello World</Callout>
+:::info
+Hello World
+:::
 
-<Callout title="Title" type="warn">
-  Hello World
-</Callout>
+:::warning[Title]
+Hello World
+:::
 
-<Callout title="Title" type="error">
-  Hello World
-</Callout>
+:::danger[Title]
+Hello World
+:::
 
-<Callout title="Title" type="idea">
-  Hello World
-</Callout>
+:::tip[Title]
+Hello World
+:::
 
 ## 备注告诫
 
 ### 参考文档
 
 - [remark-admonition](https://www.fumadocs.dev/docs/headless/mdx/remark-admonition)：警告语法
+- [admonitions](https://docusaurus.io/zh-CN/docs/markdown-features/admonitions)：告示语法
 
 ### Example
+
+```md
+:::tip[This is a `title`]
+
+Hello World
+
+:::
+
+:::note[note]
+
+Some **content** with _Markdown_ `syntax`. Check [this `api`](#).
+
+:::
+
+:::tip[tip]
+
+Some **content** with _Markdown_ `syntax`. Check [this `api`](#).
+
+:::
+
+:::info[info]
+
+Some **content** with _Markdown_ `syntax`. Check [this `api`](#).
+
+:::
+
+:::warning[warning]
+
+Some **content** with _Markdown_ `syntax`. Check [this `api`](#).
+
+:::
+
+:::danger[danger]
+
+Some **content** with _Markdown_ `syntax`. Check [this `api`](#).
+
+:::
+```
 
 :::tip[This is a `title`]
 
@@ -66,11 +109,36 @@ Hello World
 
 :::
 
-:::warning
+:::note[note]
 
-Hello World
+Some **content** with _Markdown_ `syntax`. Check [this `api`](#).
 
 :::
+
+:::tip[tip]
+
+Some **content** with _Markdown_ `syntax`. Check [this `api`](#).
+
+:::
+
+:::info[info]
+
+Some **content** with _Markdown_ `syntax`. Check [this `api`](#).
+
+:::
+
+:::warning[warning]
+
+Some **content** with _Markdown_ `syntax`. Check [this `api`](#).
+
+:::
+
+:::danger[danger]
+
+Some **content** with _Markdown_ `syntax`. Check [this `api`](#).
+
+:::
+
 
 ## 标签组
 

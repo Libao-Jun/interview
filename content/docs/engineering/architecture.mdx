@@ -7,9 +7,9 @@ homeLabel: 工程化
 updatedAt: 2026-05-23
 ---
 
-<Callout type="info">
+:::info
 架构题不是问目录怎么摆，而是考你是否理解：业务复杂度如何映射到模块边界、多人协作如何不失控、前端交付链路如何保证稳定。先讲问题，再讲方案，最后讲权衡。
-</Callout>
+:::
 
 ## 高频主线
 
@@ -78,9 +78,9 @@ src/
 | 数据层不含业务逻辑 | 只负责请求封装和类型定义 | API 文件内做数据格式转换 |
 | 依赖方向单向 | 上层依赖下层，下层不知道上层 | Store 导入页面组件 |
 
-<Callout>
+:::info
 前端分层的核心价值：**组件只管渲染、逻辑抽到 Composable、API 只管请求**。三层各司其职，改一层不影响其他层。不需要引入 Entity/UseCase/Repository 等后端概念，按前端特点做分离即可。
-</Callout>
+:::
 
 ## 微前端 — 拆分大型应用
 
@@ -90,9 +90,9 @@ src/
 - 渐进式技术栈升级（旧系统 + 新系统共存）
 - 复杂应用的模块化拆分
 
-<Callout type="warn">
+:::warning
 微前端不是银弹。小型应用引入微前端只会增加复杂度。判断标准：是否有多团队独立交付的需求，或者是否需要渐进式迁移旧系统。
-</Callout>
+:::
 
 ### 方案对比
 
@@ -135,9 +135,9 @@ packages/
 └── app-h5/      # H5 应用
 ```
 
-<Callout>
+:::info
 Monorepo 的核心收益是**跨项目共享和统一重构**，代价是 CI 复杂度增加。使用 Turborepo/Nx 的增量构建和远程缓存可以大幅缓解 CI 问题。
-</Callout>
+:::
 
 ## 组件化设计 — 从原子到页面
 
@@ -149,9 +149,9 @@ Monorepo 的核心收益是**跨项目共享和统一重构**，代价是 CI 复
 | 页面组件 | 组合业务组件形成完整页面 | UserProfile、OrderList |
 | 布局组件 | 应用级壳组件 | Layout、AppShell |
 
-<Callout>
+:::info
 组件化不是拆得越细越好。过度拆分导致：组件间通信复杂、调试链路变长、文件跳转频繁。按"是否会被复用"和"是否独立变化"来决定拆分粒度。
-</Callout>
+:::
 
 ### 组件通信方式选择
 
@@ -224,9 +224,9 @@ const { user, loading } = useUser(toRef(() => id))
 </template>
 ```
 
-<Callout>
+:::info
 三层分工：API 只管请求和类型、Composable 管业务逻辑和状态、组件只管渲染。后端接口变了只改 API 层，业务逻辑变了只改 Composable，UI 变了只改组件——各层独立变化。
-</Callout>
+:::
 
 ## 状态管理架构 — 按作用域选择方案
 
@@ -238,9 +238,9 @@ const { user, loading } = useUser(toRef(() => id))
 | 多组件共享 | Pinia / Zustand | 全局状态，支持 devtools |
 | 服务端状态 | TanStack Query / SWR | 缓存 + 自动重新获取 + 去重 |
 
-<Callout type="warn">
+:::warning
 不是所有状态都要放全局 Store。TanStack Query 管理服务端状态（API 缓存、loading、重新获取）比全局 Store 更合适——避免手动管理 loading/error/data 三元组。
-</Callout>
+:::
 
 ## 代码规范 — 团队协作的底线
 
@@ -290,9 +290,9 @@ perf(list): 虚拟滚动优化长列表渲染
 | 集成测试 | Testing Library | 组件组合、Store + API Mock | 每次提交 |
 | E2E 测试 | Playwright / Cypress | 关键业务流程 | 合入主分支 |
 
-<Callout>
+:::info
 前端测试优先覆盖：工具函数（纯函数最容易测）→ Composable / Hook（核心逻辑）→ 业务组件（关键交互）。不需要追求 100% 覆盖率，关键路径覆盖比数字更重要。
-</Callout>
+:::
 
 ## 前端 CI/CD — 构建与发布
 
@@ -320,9 +320,9 @@ perf(list): 虚拟滚动优化长列表渲染
 | 功能开关（Feature Flag） | 代码内判断开关，运行时控制功能启用 | 不发版也能控制功能 |
 | 版本回滚 | 保留历史构建产物，回滚即切换 HTML 引用 | 快速恢复 |
 
-<Callout>
+:::info
 前端发布的独特优势：**静态资源带 hash 可永久缓存，HTML 不带 hash 每次拉最新**。这意味着发布就是更新 HTML 中的引用路径，回滚就是切回旧 HTML。理解这一点，才能设计出合理的发布策略。
-</Callout>
+:::
 
 ## 面试加分项 — 从经验陈述到工程判断
 
@@ -332,9 +332,9 @@ perf(list): 虚拟滚动优化长列表渲染
 | 中级 | 讲清方案和原因 | "选 Pinia 是因为 Vuex 的 Mutation 增加心智负担" |
 | 高级 | 讲清权衡和取舍 | "当时考虑过 Redux，但团队对 Vue 生态更熟，迁移成本评估后选了 Pinia" |
 
-<Callout>
+:::info
 面试中能补充"为什么当时不用另一套方案"，通常能把回答从经验陈述提升为工程判断。架构题的核心不是你用了什么，而是你为什么这样选、取舍了什么。
-</Callout>
+:::
 
 ### 管理复杂状态
 

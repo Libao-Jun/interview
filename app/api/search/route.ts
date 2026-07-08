@@ -10,5 +10,10 @@ const searchApi = createFromSource(source, {
 });
 
 export async function GET() {
-  return searchApi.staticGET();
+  const response = await searchApi.staticGET();
+  response.headers.set(
+    "Cache-Control",
+    "public, max-age=3600, immutable",
+  );
+  return response;
 }
