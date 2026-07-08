@@ -1,5 +1,30 @@
 # 更新日志
 
+## [2026-07-08 v1.2.1] GitHub Pages 路径重复修复
+
+### Bug 原因：`/interview` 被加了两次
+
+| 来源                           | 加的路径                                                          |
+| ------------------------------ | ----------------------------------------------------------------- |
+| `next.config.mjs` → `basePath` | `/interview`（Next.js 自动为所有路由加前缀）                      |
+| `lib/shared.ts` → `docsRoute`  | `/interview/docs`（手动拼接）                                     |
+| **最终**                       | `/interview` + `/interview/docs` = `/interview/interview/docs` ❌ |
+
+### 修复：去掉 `lib/shared.ts` 中的手动拼接
+
+让 Next.js 的 `basePath` 统一处理前缀：
+
+| 环境         | `docsRoute` | Next.js `basePath` | 最终 URL                |
+| ------------ | ----------- | ------------------ | ----------------------- |
+| 本地         | `/docs`     | 无                 | `/docs/...` ✓           |
+| GitHub Pages | `/docs`     | `/interview`       | `/interview/docs/...` ✓ |
+
+### 变更文件
+
+| 文件            | 改动说明                                                                             |
+| --------------- | ------------------------------------------------------------------------------------ |
+| `lib/shared.ts` | 移除手动 `basePath` 拼接，`docsRoute` 和 `docsImageRoute` 不再包含 `/interview` 前缀 |
+
 ## [2026-07-08 v1.2.0] 项目性能优化
 
 ### 变更的文件 (24 个)
