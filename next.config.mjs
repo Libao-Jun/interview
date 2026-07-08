@@ -12,12 +12,6 @@ const basePath =
 /** @type {import('next').NextConfig} */
 const config = {
   reactStrictMode: true,
-  turbopack: {
-    resolveAlias: {
-      "@": "./",
-      "collections": "./.source",
-    },
-  },
   experimental: {
     optimizePackageImports: [
       "@orama/orama",
@@ -28,13 +22,14 @@ const config = {
   },
   ...(isGitHubPages
     ? {
-        output: "export",
-        assetPrefix: basePath || undefined,
-        basePath: basePath || undefined,
-        images: {
-          unoptimized: true,
-        },
-      }
+      output: "export",
+      trailingSlash: true,
+      assetPrefix: basePath || undefined,
+      basePath: basePath || undefined,
+      images: {
+        unoptimized: true,
+      },
+    }
     : {}),
 };
 
