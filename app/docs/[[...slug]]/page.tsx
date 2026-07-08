@@ -43,6 +43,12 @@ export default async function Page(props: PageProps<"/docs/[[...slug]]">) {
 }
 
 export async function generateStaticParams() {
+  // In dev mode, skip pre-compiling ALL pages — let Next.js compile on demand (per-request).
+  // This avoids the 58s generate-params bottleneck caused by processing 24 MDX files
+  // through 3 remark plugins (remark-directive, remarkDirectiveAdmonition, remarkSteps).
+  if (process.env.NODE_ENV === "development") {
+    return [];
+  }
   return source.generateParams();
 }
 

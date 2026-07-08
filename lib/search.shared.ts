@@ -17,7 +17,7 @@ function getCjkTokens(input: string) {
 
     tokens.add(sequence);
 
-    for (let size = 2; size <= Math.min(characters.length, 4); size += 1) {
+    for (let size = 2; size <= Math.min(characters.length, 3); size += 1) {
       for (let index = 0; index <= characters.length - size; index += 1) {
         tokens.add(characters.slice(index, index + size).join(""));
       }

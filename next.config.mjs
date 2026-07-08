@@ -12,6 +12,20 @@ const basePath =
 /** @type {import('next').NextConfig} */
 const config = {
   reactStrictMode: true,
+  turbopack: {
+    resolveAlias: {
+      "@": "./",
+      "collections": "./.source",
+    },
+  },
+  experimental: {
+    optimizePackageImports: [
+      "@orama/orama",
+      "fumadocs-ui",
+      "fumadocs-core",
+      "lucide-react",
+    ],
+  },
   ...(isGitHubPages
     ? {
         output: "export",
