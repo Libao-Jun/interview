@@ -9,6 +9,8 @@
 | 文件              | 说明                                    |
 | ----------------- | --------------------------------------- |
 | `public/ogp.png`  | 首页 OG 分享图片（1200×630，本地静态文件） |
+| `.claude/skills/add/SKILL.md` | **新增 add skill** — 新增 .mdx 文档的完整工作流（经 skill-creator + design-md 双重优化：编号章节、影响矩阵、检查清单、描述性标题） |
+| `.claude/skills/update/SKILL.md` | **新增 update skill** — 修改已有功能/模块的完整工作流（经 skill-creator + design-md 双重优化：关联矩阵、场景速查一行动线、版本号增量规则） |
 
 ### 修改
 
@@ -17,6 +19,7 @@
 | `lib/home.ts`              | `homeOgp` 和 `homeMetadata` 新增 `images: ["/ogp.png"]`，使用本地图片替代远程 URL           |
 | `content/docs/index.mdx`            | **知识库总览重构** — 基于实际 22 篇内容重写：去除不存在的"框架专题"/"技术栈"章节，改为"刷题策略 + 基础知识 + 工程化"三大入口，基础知识按四组展开 |
 | `content/docs/fundamentals/index.mdx` | **基础知识导读重构** — 基于实际 15 篇内容重写：分为 Web 核心 / 框架与状态管理 / 浏览器与网络 / 跨端开发四组，每篇含直达链接 |
+| `content/docs/guide.mdx`           | **刷题策略重构** — 从项目全局视角重写：新增按岗位角色（初级→专家）的定位表、三轮准备法绑定知识库具体章节、一周节奏表含每篇直达链接 |
 
 ### 修复
 

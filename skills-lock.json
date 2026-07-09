@@ -19,6 +19,12 @@
       "skillPath": "plugins/stitch-build/skills/react-components/SKILL.md",
       "computedHash": "558c6619e28aaf6222828591e531bfc83c2f4fbb2fda3d02300d92b2ca9fa709"
     },
+    "skill-creator": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/skill-creator/SKILL.md",
+      "computedHash": "7e3c9cd74e9e2b4828527a857170e86310f2dab5ea8030a9043df2c7e6c88857"
+    },
     "vue": {
       "source": "antfu/skills",
       "sourceType": "github",
