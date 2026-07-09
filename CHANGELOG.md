@@ -1,5 +1,52 @@
 # 更新日志
 
+## [2026-07-09 v1.3.0] SEO 优化 
+
+> SEO 优化 -> robots.txt / sitemap.xml / TDK + Meta
+
+### 新增
+
+| 文件                 | 说明                                                              |
+| -------------------- | ----------------------------------------------------------------- |
+| `lib/seo.ts`         | **唯一 SEO 配置源** — 集中管理 `siteConfig`（站点名/描述/关键词/作者）+ `getSiteUrl()` |
+| `app/sitemap.ts`     | 动态生成 sitemap.xml，包含首页 + 全部 24 个文档页面的完整 URL     |
+| `app/robots.ts`      | 改进：站点 URL 动态生成，指向完整 sitemap 地址                     |
+
+### 修改
+
+| 文件                      | 说明                                                                     |
+| ------------------------- | ------------------------------------------------------------------------ |
+| `app/layout.tsx`          | 根布局从 `lib/seo.ts` 读取配置，新增完整 TDK + Open Graph + Twitter Card + robots meta |
+| `app/(home)/page.tsx`     | 首页从 `lib/seo.ts` 读取配置，新增独立 metadata（标题 / 描述 / OG / Twitter） |
+| `lib/shared.ts`           | 移除 SEO 相关配置（迁移至 `lib/seo.ts`），保留路由常量和 `appName` 兼容别名 |
+
+### SEO 优化详情
+
+#### TDK（Title / Description / Keywords）
+- **Title**: `前端面试知识库 — 从基础到专家的面试路线图`（首页），内页使用 `{标题} | 前端面试知识库` 模板
+- **Description**: 覆盖核心卖点的详细描述（~60 字）
+- **Keywords**: 前端面试、JavaScript、TypeScript、React、Vue 等 14 个核心关键词
+
+#### Open Graph / Twitter Card
+- `og:type`: website
+- `og:site_name`: 前端面试知识库
+- `og:locale`: zh_CN
+- `twitter:card`: summary_large_image
+
+#### Robots Meta
+- `index: true` / `follow: true`
+- `max-image-preview: large` / `max-snippet: -1`（不限制）
+
+#### Sitemap
+- 首页 priority=1.0, changefreq=daily
+- 文档页 priority=0.8, changefreq=weekly
+- `lastmod` 取自页面 `updatedAt` 字段
+
+### 效果
+- 搜索引擎可以正确抓取和索引所有页面
+- 社交媒体分享时展示完整标题、描述和图片
+- `robots.txt` 指向完整 sitemap URL，搜索引擎可自动发现
+
 ## [2026-07-08 v1.2.1] GitHub Pages 路径重复修复
 
 ### Bug 原因：`/interview` 被加了两次

@@ -5,34 +5,52 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import Search from "@/components/search";
 import ThemeProvider from "@/components/theme-provider";
+import { getSiteUrl, siteConfig } from "@/lib/seo";
 
 const inter = Inter({
   subsets: ["latin"],
 });
 
-function getMetadataBase() {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.SITE_URL;
-
-  if (siteUrl) {
-    return new URL(siteUrl);
-  }
-
-  const repository = process.env.GITHUB_REPOSITORY ?? "";
-  const [owner, repo] = repository.split("/");
-
-  if (process.env.GITHUB_PAGES === "true" && owner && repo) {
-    const pageUrl = repo.endsWith(".github.io")
-      ? `https://${repo}`
-      : `https://${owner}.github.io/${repo}`;
-
-    return new URL(pageUrl);
-  }
-
-  return new URL("http://localhost:3000");
-}
-
 export const metadata: Metadata = {
-  metadataBase: getMetadataBase(),
+  metadataBase: new URL(getSiteUrl()),
+  title: {
+    default: siteConfig.name,
+    template: `%s | ${siteConfig.name}`,
+  },
+  description: siteConfig.description,
+  keywords: siteConfig.keywords,
+  authors: [siteConfig.author],
+  creator: siteConfig.author.name,
+  publisher: siteConfig.author.name,
+  formatDetection: {
+    telephone: false,
+    email: false,
+    address: false,
+  },
+  openGraph: {
+    type: "website",
+    siteName: siteConfig.name,
+    title: siteConfig.name,
+    description: siteConfig.description,
+    locale: siteConfig.locale,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteConfig.name,
+    description: siteConfig.description,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    "max-video-preview": -1,
+    "max-image-preview": "large",
+    "max-snippet": -1,
+  },
+  alternates: {
+    types: {
+      "application/rss+xml": "/rss.xml",
+    },
+  },
 };
 
 const themeInitScript = `try {
