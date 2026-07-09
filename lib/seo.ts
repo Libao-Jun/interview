@@ -49,6 +49,9 @@ export const siteConfig = {
 
   /** 语区 */
   locale: "zh_CN",
+
+  /** 站点 URL */
+  url: "https://libao-jun.github.io/interview/",
 };
 
 /**

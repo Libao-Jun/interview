@@ -22,12 +22,28 @@ export const homeMetadata: Metadata = {
   openGraph: {
     title: siteConfig.name,
     description: siteConfig.homeDescription,
+    type: "website",
+    images: ["/ogp.png"],
+    url: siteConfig.url,
   },
   twitter: {
     title: siteConfig.name,
     description: siteConfig.homeDescription,
   },
 };
+
+// ============================================================
+// 分享元数据  OpenGraph（OG）元数据协议
+// ============================================================
+export const homeOgp: Metadata = {
+  openGraph: {
+    title: siteConfig.name,
+    type: "website",
+    images: ["/ogp.png"],
+    description: siteConfig.homeDescription,
+    url: siteConfig.url,
+  },
+}
 
 // ============================================================
 // 首页「热门话题」分区

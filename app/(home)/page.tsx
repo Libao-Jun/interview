@@ -1,15 +1,15 @@
-import {
-  ArrowRight,
-  Clock3,
-  Sparkles,
-  TimerReset,
-} from "lucide-react";
+import { ArrowRight, Clock3, Sparkles, TimerReset } from "lucide-react";
 import Link from "next/link";
-import { homeMetadata, homeRolePaths, homeRoutines, homeTracks } from "@/lib/home";
+import {
+  homeMetadata,
+  homeOgp,
+  homeRolePaths,
+  homeRoutines,
+  homeTracks,
+} from "@/lib/home";
 import { siteConfig } from "@/lib/seo";
 import { source } from "@/lib/source";
-
-export { homeMetadata as metadata };
+export { homeMetadata as metadata, homeOgp as ogp };
 
 const recentDateFormatter = new Intl.DateTimeFormat("zh-CN", {
   month: "2-digit",
@@ -97,7 +97,9 @@ export default function HomePage() {
                 <p className="text-xs uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">
                   覆盖模块
                 </p>
-                <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">8+</p>
+                <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">
+                  8+
+                </p>
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                   按专题拆分高频问题与回答框架
                 </p>
@@ -316,9 +318,7 @@ export default function HomePage() {
             <p className="text-sm font-medium text-slate-300 dark:text-slate-200">
               Interview Routine
             </p>
-            <h2 className="mt-2 text-2xl font-semibold">
-              资料沉淀
-            </h2>
+            <h2 className="mt-2 text-2xl font-semibold">资料沉淀</h2>
           </div>
           <div className="grid gap-3 md:grid-cols-3">
             {homeRoutines.map((item) => (
