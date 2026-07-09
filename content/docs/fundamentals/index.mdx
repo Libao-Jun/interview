@@ -11,6 +11,48 @@ icon: BookOpen
 - 能说清浏览器如何把资源变成可交互页面
 - 能解释 JavaScript 执行模型，而不是只背 API
 - 能从布局、重排、重绘和网络链路推导优化思路
+- 能讲透 Vue 和 React 的渲染模型与数据流原理
+- 能在跨端场景中准确判断技术边界与取舍
+
+## 内容地图
+
+基础知识共 **15 篇**，按四组话题组织。
+
+### Web 核心三件套 + 语言进阶
+
+| 章节 | 核心关注点 |
+| --- | --- |
+| **[HTML](/docs/fundamentals/html)** | 语义标签、音视频、Canvas/SVG、Web Storage、Web Worker |
+| **[CSS](/docs/fundamentals/css)** | 盒模型、BFC、选择器优先级、Flex/Grid、重排重绘、响应式 |
+| **[ES6+](/docs/fundamentals/es6)** | 变量声明、解构、箭头函数、Promise、模块化、迭代器与生成器 |
+| **[JavaScript](/docs/fundamentals/javascript)** | 数据类型、原型链、闭包、this、事件循环、异步编程 |
+| **[TypeScript](/docs/fundamentals/typescript)** | 类型体操、泛型约束、条件类型、映射类型、类型守卫 |
+
+### 框架与状态管理
+
+| 章节 | 核心关注点 |
+| --- | --- |
+| **[Vue](/docs/fundamentals/vue)** | 响应式原理（Proxy vs defineProperty）、组件化、生命周期 |
+| **[Vue Router](/docs/fundamentals/vue-router)** | 路由守卫、动态路由、导航解析流程、懒加载策略 |
+| **[React](/docs/fundamentals/react)** | Fiber 架构、Hooks 机制、并发渲染、虚拟 DOM Diff |
+| **[状态管理](/docs/fundamentals/store)** | Vuex/Pinia vs Redux/Zustand、单向数据流、中间件机制 |
+
+### 浏览器与网络
+
+| 章节 | 核心关注点 |
+| --- | --- |
+| **[浏览器](/docs/fundamentals/browser)** | 渲染管线、V8 引擎、垃圾回收、Web 安全、跨域方案 |
+| **[Network](/docs/fundamentals/network)** | HTTP 演进（1.1/2/3）、TCP/UDP、缓存策略、WebSocket |
+
+### 跨端开发
+
+| 章节 | 核心关注点 |
+| --- | --- |
+| **[H5 公众号](/docs/fundamentals/h5)** | JSSDK 接入、微信 webview 兼容、授权流程 |
+| **[微信小程序](/docs/fundamentals/mini-program)** | 双线程架构、WXML/WXSS、分包策略、性能优化 |
+| **[uni-app](/docs/fundamentals/uni-app)** | 跨端编译原理、条件编译、nvue vs webview、发布流程 |
+
+---
 
 ## 推荐学习路径
 
@@ -18,14 +60,32 @@ icon: BookOpen
 
 ### HTML 与 CSS
 
-语义化标签、盒模型、Flex/Grid 布局、选择器优先级、重排与重绘
+语义化标签、盒模型、Flex/Grid 布局、选择器优先级、重排与重绘。这是面试中最容易被追问"为什么"的部分 —— 把浏览器渲染行为和 CSS 规则绑在一起理解。
 
 ### JavaScript 与 TypeScript
 
-闭包、原型链、事件循环、类型系统、泛型与类型守卫
+闭包、原型链、事件循环、类型系统、泛型与类型守卫。面试官通常会从一个简单的输出题切入，然后逐步追问到执行模型和内存管理，直到触及你的上限。
 
 ### 浏览器与网络
 
-从 URL 到渲染全链路、HTTP 缓存策略、TCP/UDP、跨域解决方案
+从 URL 到渲染全链路、HTTP 缓存策略、TCP/UDP、跨域解决方案。这是"性能优化"和"安全"两类追问的共同地基 —— 浏览器和网络的底层机制决定了你能多深地回答这两类问题。
+
+### Vue 与 React
+
+响应式引擎 vs Fiber 架构、编译优化 vs 并发渲染。选择当前岗位要求的主框架深入阅读，另一篇作为横向对比视野即可。
+
+### 跨端与拓展场景
+
+H5 公众号、微信小程序、uni-app 的架构差异和技术边界。如果最近项目中涉及跨端开发，应优先补足这部分 —— 真实场景题远比纯理论题有说服力。
 
 </Steps>
+
+---
+
+:::info
+基础知识的目标不是"读完"，而是**能用自己的话讲出来**。每读完一篇，试着回答这三个问题：
+
+1. 核心机制是什么？（一句话说清）
+2. 为什么会这样设计？（设计动机和取舍）
+3. 我在项目中怎么验证 / 应用过它？（绑定真实案例）
+:::
